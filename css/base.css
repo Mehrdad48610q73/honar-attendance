@@ -1,0 +1,272 @@
+:root{
+  --navy:#102B50;
+  --blue:#2878C7;
+  --blue-light:#E6F3FA;
+  --teal:#40B9B1;
+  --orange:#F3A65B;
+  --bg:#F7FAFD;
+  --red:#E76D75;
+  --green:#58B88A;
+  --radius:22px;
+  --shadow:0 6px 20px rgba(16,43,80,.08);
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html{
+  direction:rtl;
+}
+
+body{
+  font-family:"Vazirmatn","Vazir",Tahoma,"Segoe UI",sans-serif;
+  background:var(--bg);
+  color:var(--navy);
+  min-height:100vh;
+  padding-bottom:96px;
+  line-height:1.7;
+}
+
+button{
+  font-family:inherit;
+  border:none;
+  cursor:pointer;
+}
+.app-header{
+  background:linear-gradient(135deg,var(--navy),var(--blue));
+  color:#fff;
+  padding:30px 20px 74px;
+  border-radius:0 0 32px 32px;
+}
+.app-header h1{
+  font-size:1.25rem;
+  font-weight:800;
+  letter-spacing:.5px;
+}
+.app-header .date{
+  margin-top:6px;
+  opacity:.88;
+  font-size:.95rem;
+}
+
+.container{
+  padding:0 16px;
+  max-width:640px;
+  margin:0 auto;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:-50px;
+}
+.stat{
+  background:#fff;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:14px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.ico{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  flex:none;
+}
+.ico svg{
+  width:22px;
+  height:22px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.stat .num{
+  font-size:1.4rem;
+  font-weight:800;
+  line-height:1.2;
+}
+.stat .lbl{
+  font-size:.8rem;
+  opacity:.7;
+}
+
+.c-blue{background:var(--blue-light);color:var(--blue);}
+.c-green{background:#E5F5EC;color:var(--green);}
+.c-red{background:#FCE9EA;color:var(--red);}
+.c-orange{background:#FDF0E2;color:var(--orange);}
+.c-teal{background:#E2F5F4;color:var(--teal);}
+.c-navy{background:#E3E8F0;color:var(--navy);}
+
+.section-title{
+  margin:26px 4px 12px;
+  font-size:1.05rem;
+  font-weight:700;
+}
+
+.quick{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.quick button{
+  background:#fff;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px 10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  color:var(--navy);
+  font-size:.92rem;
+  font-weight:600;
+  transition:transform .15s ease;
+}
+.quick button:active{
+  transform:scale(.96);
+}
+
+.backup-note{
+  margin-top:22px;
+  background:#FDF0E2;
+  border-radius:var(--radius);
+  padding:14px 16px;
+  font-size:.85rem;
+  line-height:1.9;
+}
+
+.bottom-nav{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  background:#fff;
+  box-shadow:0 -6px 20px rgba(16,43,80,.08);
+  border-radius:26px 26px 0 0;
+  display:flex;
+  justify-content:space-around;
+  padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+}
+.bottom-nav button{
+  background:none;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  font-size:.72rem;
+  color:#7C8CA3;
+  padding:6px 10px;
+  border-radius:16px;
+}
+.bottom-nav button svg{
+  width:22px;
+  height:22px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.bottom-nav button.active{
+  color:var(--blue);
+  background:var(--blue-light);
+    }
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#102B50">
+  <title>HONAR ATTENDANCE</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-sport" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+  <symbol id="i-teacher" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="4"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></symbol>
+  <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="4"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol>
+  <symbol id="i-backup" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
+</svg>
+
+<header class="app-header">
+  <div class="container">
+    <h1>HONAR ATTENDANCE</h1>
+    <div class="date" id="todayDate">تاریخ امروز</div>
+  </div>
+</header>
+
+<main class="container" id="page-dashboard">
+
+  <section class="stats">
+    <div class="stat">
+      <div class="ico c-blue"><svg><use href="#i-users"/></svg></div>
+      <div><div class="num" id="statTotal">۰</div><div class="lbl">کل دانش‌آموزان</div></div>
+    </div>
+    <div class="stat">
+      <div class="ico c-green"><svg><use href="#i-users"/></svg></div>
+      <div><div class="num" id="statPresent">۰</div><div class="lbl">حاضرین امروز</div></div>
+    </div>
+    <div class="stat">
+      <div class="ico c-red"><svg><use href="#i-users"/></svg></div>
+      <div><div class="num" id="statAbsent">۰</div><div class="lbl">غایبین امروز</div></div>
+    </div>
+    <div class="stat">
+      <div class="ico c-orange"><svg><use href="#i-sport"/></svg></div>
+      <div><div class="num" id="statSport">۰</div><div class="lbl">غایبین ورزش</div></div>
+    </div>
+    <div class="stat">
+      <div class="ico c-teal"><svg><use href="#i-teacher"/></svg></div>
+      <div><div class="num" id="statTeachers">۰</div><div class="lbl">دبیران غایب</div></div>
+    </div>
+    <div class="stat">
+      <div class="ico c-navy"><svg><use href="#i-award"/></svg></div>
+      <div><div class="num" id="statOfficials">۰</div><div class="lbl">مسئولان غایب</div></div>
+    </div>
+  </section>
+
+  <h2 class="section-title">دسترسی سریع</h2>
+  <section class="quick">
+    <button data-page="attendance"><div class="ico c-blue"><svg><use href="#i-users"/></svg></div>حضور و غیاب دانش‌آموزان</button>
+    <button data-page="sport"><div class="ico c-orange"><svg><use href="#i-sport"/></svg></div>حضور و غیاب ورزش</button>
+    <button data-page="teachers"><div class="ico c-teal"><svg><use href="#i-teacher"/></svg></div>حضور و غیاب دبیران</button>
+    <button data-page="officials"><div class="ico c-navy"><svg><use href="#i-award"/></svg></div>دبیران و مسئولان</button>
+    <button data-page="calendar"><div class="ico c-green"><svg><use href="#i-calendar"/></svg></div>تقویم شمسی</button>
+    <button data-page="reports"><div class="ico c-red"><svg><use href="#i-chart"/></svg></div>گزارش‌ها و آمار</button>
+    <button data-page="backup"><div class="ico c-blue"><svg><use href="#i-backup"/></svg></div>پشتیبان‌گیری</button>
+    <button data-page="settings"><div class="ico c-navy"><svg><use href="#i-settings"/></svg></div>تنظیمات</button>
+  </section>
+
+  <div class="backup-note">
+    ⚠️ اطلاعات فقط روی حافظه همین گوشی ذخیره می‌شود. با پاک کردن داده‌های Chrome یا حذف برنامه، اطلاعات از بین می‌رود. لطفاً به‌طور منظم از بخش «پشتیبان‌گیری» فایل پشتیبان تهیه کنید.
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <button class="active" data-page="dashboard"><svg><use href="#i-home"/></svg>خانه</button>
+  <button data-page="attendance"><svg><use href="#i-users"/></svg>دانش‌آموزان</button>
+  <button data-page="sport"><svg><use href="#i-sport"/></svg>ورزش</button>
+  <button data-page="calendar"><svg><use href="#i-calendar"/></svg>تقویم</button>
+  <button data-page="reports"><svg><use href="#i-chart"/></svg>گزارش</button>
+</nav>
+
+</body>
+</html>
