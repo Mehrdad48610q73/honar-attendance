@@ -46,6 +46,7 @@
     '.rb.leave{background:#E2F5F4;color:var(--teal)}' +
     '.rb.zero{background:var(--bg);color:#7C8CA3}' +
     '.rp-empty{margin-top:4px;padding:16px}' +
+    '.rp-card .searchbox{margin:0 0 12px;box-shadow:none;background:var(--bg)}' +
     '.rp-pd{line-height:2.1;font-size:.9rem;margin-top:6px}' +
     '@media print{' +
     '@page{size:A4;margin:12mm}' +
@@ -63,7 +64,7 @@
     '.pr-table tr{page-break-inside:avoid}' +
     '}';
 
-  var st = { cat: 'student', grade: 0, scope: 'both', sort: 'name', only: true, period: 'month',
+  var st = { cat: 'student', grade: 0, scope: 'both', sort: 'name', only: true, q: '', period: 'month',
              rows: [], range: null, err: '', page: null, tk: 0 };
 
   function ic(id) { return '<svg><use href="#i-' + id + '"/></svg>'; }
@@ -116,9 +117,16 @@
     if (st.cat === 'student') return collator.compare(x.p.name, y.p.name);
     return (x.p.order || 0) - (y.p.order || 0);
   }
+  function norm(s) {
+    return String(s || '').replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/\u200c/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function matches(r) {
+    var k = norm(st.q);
+    return !k || norm(r.p.name).indexOf(k) !== -1;
+  }
   function rowsFor(act) {
-    var list = st.rows.slice();
-    if (st.only) list = list.filter(function (r) { return hasAny(r, [act]); });
+    var list = st.rows.filter(matches);
+    if (st.only && !st.q.trim()) list = list.filter(function (r) { return hasAny(r, [act]); });
     if (st.sort === 'count') {
       list.sort(function (x, y) { return (cnt(y, act, 'absent') - cnt(x, act, 'absent')) || baseCmp(x, y); });
     } else {
@@ -128,8 +136,8 @@
   }
   function rowsAll() {
     var acts = actsNow();
-    var list = st.rows.slice();
-    if (st.only) list = list.filter(function (r) { return hasAny(r, acts); });
+    var list = st.rows.filter(matches);
+    if (st.only && !st.q.trim()) list = list.filter(function (r) { return hasAny(r, acts); });
     return list.sort(baseCmp);
   }
 
@@ -186,7 +194,7 @@
   function monthRange(y, m) { return { from: Jalali.format(y, m, 1), to: Jalali.format(y, m, Jalali.monthLength(y, m)) }; }
 
   function readRange() {
-    var p = st.period, a, b;
+    var p = st.period, a, b, r;
     if (p === 'day') { a = readDate('a'); return { from: a, to: a }; }
     if (p === 'week') {
       a = readDate('a');
@@ -254,7 +262,7 @@
     var h = '<div class="rp-sec"><div class="rp-sec-h"><h3>' + secTitle(act) + '</h3><span>' +
       fa(list.length) + ' نفر · ' + fa(total) + ' غیبت</span></div>';
     if (!list.length) {
-      h += '<div class="empty rp-empty">در این بازه موردی ثبت نشده است.</div>';
+      h += '<div class="empty rp-empty">' + (st.q.trim() ? 'موردی با این جستجو پیدا نشد.' : 'در این بازه موردی ثبت نشده است.') + '</div>';
     } else {
       h += list.map(function (r) {
         var n = cnt(r, act, 'absent'), late = cnt(r, act, 'late'), leave = cnt(r, act, 'leave');
@@ -272,7 +280,7 @@
     var out = q('#rOut');
     if (!st.range) { out.innerHTML = st.err ? '<div class="empty">' + st.err + '</div>' : ''; return; }
     var h = '<div class="rp-sum"><div class="rp-range">' + UI.esc(rangeLabel(st.range)) + '</div>' +
-      '<small>' + fa(st.rows.length) + ' نفر در فهرست · ' + reportTitle() + '</small></div>' +
+      '<small>' + fa(st.rows.length) + ' نفر در فهرست · ' + reportTitle() + (st.q.trim() ? ' · جستجو: «' + UI.esc(st.q.trim()) + '»' : '') + '</small></div>' +
       '<div class="rp-actions">' +
       '<button class="btn ghost" data-act="copy">' + ic('copy') + 'کپی متن</button>' +
       '<button class="btn ghost" data-act="csv">' + ic('backup') + 'فایل CSV</button>' +
@@ -282,7 +290,8 @@
   }
 
   function drawOpts() {
-    var h = '<div class="rp-card">';
+    var h = '<div class="rp-card">' +
+      '<div class="searchbox">' + ic('search') + '<input id="rQ" type="search" placeholder="جستجوی نام در گزارش" value="' + UI.esc(st.q) + '"></div>';
     if (st.cat === 'student') {
       h += '<div class="rp-chips">' + [0, 10, 11, 12].map(function (g) {
         return '<button class="' + (st.grade === g ? 'on' : '') + '" data-grade="' + g + '">' + (g ? 'پایه ' + GN[g] : 'همه پایه‌ها') + '</button>';
@@ -301,7 +310,9 @@
   /* ---------- خروجی‌ها ---------- */
 
   function reportText() {
-    var L = [reportTitle(), 'بازه: ' + rangeLabel(st.range), ''];
+    var L = [reportTitle(), 'بازه: ' + rangeLabel(st.range)];
+    if (st.q.trim()) L.push('جستجو: ' + st.q.trim());
+    L.push('');
     actsNow().forEach(function (act) {
       var list = rowsFor(act);
       L.push(secTitle(act) + ':');
@@ -370,6 +381,7 @@
   function printHtml() {
     var student = st.cat === 'student';
     var h = '<h1>' + UI.esc(reportTitle()) + '</h1><div class="pr-meta">بازه: ' + UI.esc(rangeLabel(st.range)) +
+      (st.q.trim() ? ' — جستجو: ' + UI.esc(st.q.trim()) : '') +
       ' — تاریخ تهیه گزارش: ' + UI.esc(Jalali.longDate(Jalali.todayString())) + '</div>';
     actsNow().forEach(function (act) {
       var list = rowsFor(act);
@@ -412,7 +424,7 @@
 
   function render(root) {
     injectCss();
-    st.cat = 'student'; st.grade = 0; st.scope = 'both'; st.sort = 'name'; st.only = true; st.period = 'month';
+    st.cat = 'student'; st.grade = 0; st.scope = 'both'; st.sort = 'name'; st.only = true; st.q = ''; st.period = 'month';
     st.rows = []; st.range = null; st.err = '';
     root.innerHTML =
       '<div class="page rp-page">' +
@@ -427,6 +439,9 @@
     st.page = root.querySelector('.rp-page');
     st.page.addEventListener('click', onClick);
     st.page.addEventListener('change', onChange);
+    st.page.addEventListener('input', function (e) {
+      if (e.target.id === 'rQ') { st.q = e.target.value; drawResult(); }
+    });
     drawOpts();
     compute();
   }
@@ -434,7 +449,7 @@
   function onClick(e) {
     var t = e.target.closest('[data-cat]');
     if (t) {
-      st.cat = t.getAttribute('data-cat'); st.grade = 0; st.scope = 'both'; st.sort = 'name';
+      st.cat = t.getAttribute('data-cat'); st.grade = 0; st.scope = 'both'; st.sort = 'name'; st.q = '';
       st.page.querySelectorAll('#rCat button').forEach(function (b) { b.classList.toggle('on', b === t); });
       drawOpts(); compute(); return;
     }
