@@ -4,7 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#102B50">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="حضور و غیاب">
   <title>HONAR ATTENDANCE</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/pages.css">
@@ -83,6 +89,8 @@
     <button data-page="settings"><div class="ico c-navy"><svg><use href="#i-settings"/></svg></div>تنظیمات</button>
   </section>
 
+  <button class="btn primary" id="installBtn" hidden style="margin-top:20px;width:100%">نصب برنامه روی صفحه اصلی گوشی</button>
+
   <div class="backup-note">
     ⚠️ اطلاعات فقط روی حافظه همین گوشی ذخیره می‌شود. با پاک کردن داده‌های Chrome یا حذف برنامه، اطلاعات از بین می‌رود. لطفاً به‌طور منظم از بخش «پشتیبان‌گیری» فایل پشتیبان تهیه کنید.
   </div>
@@ -111,5 +119,28 @@
 <script src="js/reports.js"></script>
 <script src="js/backup.js"></script>
 
+<script>
+(function () {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+  var deferred = null;
+  var btn = document.getElementById('installBtn');
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferred = e;
+    if (btn) btn.hidden = false;
+  });
+  if (btn) btn.addEventListener('click', function () {
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.then(function () { deferred = null; btn.hidden = true; });
+  });
+  window.addEventListener('appinstalled', function () { if (btn) btn.hidden = true; });
+})();
+</script>
+
 </body>
-                                        </html>
+    </html>
