@@ -1,0 +1,19 @@
+{
+  "name": "HONAR ATTENDANCE — حضور و غیاب هنرستان",
+  "short_name": "حضور و غیاب",
+  "description": "مدیریت حضور و غیاب هنرستان بدون نیاز به اینترنت",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7FAFD",
+  "theme_color": "#102B50",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
