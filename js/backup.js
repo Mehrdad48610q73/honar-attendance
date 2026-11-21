@@ -27,6 +27,11 @@
     '.bk-danger h3{color:var(--red)}' +
     '.bk-card select{width:100%;border:2px solid #E1EAF3;border-radius:16px;padding:11px 12px;font-family:inherit;font-size:.92rem;color:var(--navy);background:var(--bg);outline:none;direction:rtl;margin-top:8px}' +
     '.bk-link{margin-top:8px;background:var(--navy);color:#fff;border-radius:14px;padding:8px 14px;font-size:.8rem;font-weight:700}' +
+    '.bk-card input[type=text],.bk-card textarea{width:100%;border:2px solid #E1EAF3;border-radius:16px;padding:11px 12px;font-family:inherit;font-size:.92rem;color:var(--navy);background:var(--bg);outline:none;direction:rtl;margin-top:6px}' +
+    '.bk-card textarea{min-height:120px;resize:vertical;line-height:1.9}' +
+    '.bk-lab{display:block;font-size:.82rem;margin:12px 0 2px;opacity:.75}' +
+    '.bk-hint{font-size:.76rem;line-height:1.9;opacity:.7;margin-top:6px}' +
+    '.bk-prev{background:var(--bg);border-radius:16px;padding:12px 14px;font-size:.84rem;line-height:2;white-space:pre-wrap;margin-top:6px}' +
     '.bk-sum{font-size:.88rem;line-height:2}' +
     '.bk-sum b{color:var(--blue)}';
 
@@ -331,13 +336,34 @@
     return bytes < 1024 ? fa(bytes) + ' بایت' : fa(Math.round(bytes / 1024)) + ' کیلوبایت';
   }
 
+  function smsCardHtml(c) {
+    var opts = SmsTpl.ORDER.map(function (id) {
+      return '<option value="' + id + '"' + (c.style === id ? ' selected' : '') + '>' + SmsTpl.STYLES[id].label + '</option>';
+    }).join('') +
+      '<option value="auto"' + (c.style === 'auto' ? ' selected' : '') + '>تنوع خودکار (هر بار یکی از سبک‌های بالا)</option>' +
+      '<option value="custom"' + (c.style === 'custom' ? ' selected' : '') + '>متن دلخواه من</option>';
+    var cd = c.cd || SmsTpl.STYLES.formal.daily, cs = c.cs || SmsTpl.STYLES.formal.sport;
+    return '<div class="bk-card"><h3>متن پیامک به والدین</h3>' +
+      '<label class="bk-lab">نام مدرسه در پیامک</label><input type="text" id="smsSchool" value="' + UI.esc(c.school) + '">' +
+      '<label class="bk-lab">سبک نوشتن پیامک</label><select id="smsStyle">' + opts + '</select>' +
+      '<div id="smsCustom"' + (c.style === 'custom' ? '' : ' hidden') + '>' +
+      '<label class="bk-lab">متن پیامک غیبت روزانه</label><textarea id="smsCD">' + UI.esc(cd) + '</textarea>' +
+      '<label class="bk-lab">متن پیامک غیبت ورزش</label><textarea id="smsCS">' + UI.esc(cs) + '</textarea>' +
+      '<div class="bk-hint">این کلمه‌ها داخل متن به‌طور خودکار جایگزین می‌شوند: {نام} نام دانش‌آموز، {روز} نام روز هفته، {تاریخ} تاریخ شمسی، {امروز} کلمه «امروز» (یا «در روز» برای روزهای دیگر)، {مدرسه} نام مدرسه. حتماً {نام} را در متن بگذارید.</div></div>' +
+      '<div class="bk-hint" id="smsNote"></div>' +
+      '<label class="bk-lab">نمونه پیامک غیبت روزانه</label><div class="bk-prev" id="smsPrevD"></div>' +
+      '<label class="bk-lab">نمونه پیامک غیبت ورزش</label><div class="bk-prev" id="smsPrevS"></div>' +
+      '<div class="bk-col"><button class="btn primary" data-act="saveSms">ذخیره متن پیامک</button></div></div>';
+  }
+
   async function renderSettings(root) {
     injectCss();
     root.innerHTML = '<div class="page bk-page"><div class="page-head"><button class="back" data-page="dashboard">' + ic('back') +
       '</button><h2>تنظیمات برنامه</h2></div><div class="empty">در حال خواندن...</div></div>';
     var page = root.querySelector('.bk-page');
-    var persisted = false, size = 0, days = 7;
+    var persisted = false, size = 0, days = 7, sms = null;
     try {
+      sms = window.SmsTpl ? await SmsTpl.load() : null;
       var all = await DB.exportAll();
       size = new Blob([JSON.stringify(all)]).size;
       days = await DB.getSetting('backupReminderDays', 7);
@@ -352,6 +378,7 @@
       '<div class="bk-card"><h3>یادآور پشتیبان‌گیری</h3>' +
       '<div class="bk-line">اگر از آخرین نسخه پشتیبان این‌قدر گذشته باشد، در صفحه اصلی هشدار نمایش داده می‌شود.</div>' +
       '<select id="stDays">' + opts + '</select></div>' +
+      (sms ? smsCardHtml(sms) : '') +
       '<div class="bk-card"><h3>وضعیت ذخیره‌سازی</h3>' +
       '<div class="bk-line">حجم اطلاعات ذخیره‌شده: <b>' + fmtSize(size) + '</b></div>' +
       '<div class="bk-line">محافظت از حافظه: <b>' + (persisted ? 'فعال (Chrome به‌طور خودکار اطلاعات را پاک نمی‌کند)' : 'درخواست نشده یا تأیید نشده') + '</b></div>' +
@@ -361,8 +388,31 @@
       '<div class="bk-card bk-danger"><h3>حذف همه اطلاعات</h3>' +
       '<div class="bk-line">همه دانش‌آموزان، دبیران، مسئولان و سوابق حضور و غیاب پاک می‌شود و قابل برگشت نیست، مگر اینکه فایل پشتیبان داشته باشید.</div>' +
       '<div class="bk-col"><button class="btn danger" data-act="wipe">حذف همه اطلاعات</button></div></div>' +
-      '<div class="bk-card"><h3>درباره برنامه</h3><div class="bk-line">HONAR ATTENDANCE — نسخه ۱٫۰<br>مدیریت حضور و غیاب هنرستان، بدون نیاز به اینترنت</div></div>';
+      '<div class="bk-card"><h3>درباره برنامه</h3><div class="bk-line">HONAR ATTENDANCE — نسخه ۱٫۰<br>مدیریت حضور و غیاب هنرستان، بدون نیاز به اینترنت<br><b>توسعه داده شده توسط مهرداد بایرامی</b></div></div>';
+    if (sms) updateSmsPreview();
+    function updateSmsPreview() {
+      var style = page.querySelector('#smsStyle').value;
+      var c = {
+        style: style,
+        school: page.querySelector('#smsSchool').value.trim() || SmsTpl.DEFAULT_SCHOOL,
+        cd: page.querySelector('#smsCD').value,
+        cs: page.querySelector('#smsCS').value
+      };
+      var force = style === 'auto' ? 'formal' : undefined;
+      page.querySelector('#smsPrevD').textContent = SmsTpl.build(c, 'daily', SmsTpl.sample(), force);
+      page.querySelector('#smsPrevS').textContent = SmsTpl.build(c, 'sport', SmsTpl.sample(), force);
+      page.querySelector('#smsNote').textContent = style === 'auto'
+        ? 'در حالت «تنوع خودکار»، برای هر پیام یکی از چهار سبک به‌طور تصادفی انتخاب می‌شود تا پیامک‌ها تکراری نباشند. نمونه زیر یکی از آن‌هاست.' : '';
+    }
+    page.addEventListener('input', function (e) {
+      if (sms && (e.target.id === 'smsSchool' || e.target.id === 'smsCD' || e.target.id === 'smsCS')) updateSmsPreview();
+    });
     page.addEventListener('change', async function (e) {
+      if (e.target.id === 'smsStyle') {
+        page.querySelector('#smsCustom').hidden = e.target.value !== 'custom';
+        updateSmsPreview();
+        return;
+      }
       if (e.target.id === 'stDays') {
         try { await DB.setSetting('backupReminderDays', Number(e.target.value)); UI.toast('ذخیره شد', 'ok'); refreshNote(); }
         catch (err) { UI.toast('ذخیره نشد', 'bad'); }
@@ -372,7 +422,23 @@
       var t = e.target.closest('[data-act]');
       if (!t) return;
       var a = t.getAttribute('data-act');
-      if (a === 'persist') {
+      if (a === 'saveSms') {
+        var style = page.querySelector('#smsStyle').value;
+        var school = page.querySelector('#smsSchool').value.trim() || SmsTpl.DEFAULT_SCHOOL;
+        var cdv = page.querySelector('#smsCD').value.trim();
+        var csv = page.querySelector('#smsCS').value.trim();
+        if (style === 'custom' && (cdv.indexOf('{نام}') === -1 || csv.indexOf('{نام}') === -1)) {
+          UI.toast('هر دو متن باید شامل {نام} باشند تا اسم دانش‌آموز درج شود', 'bad');
+          return;
+        }
+        try {
+          await DB.setSetting('smsStyle', style);
+          await DB.setSetting('schoolName', school);
+          await DB.setSetting('smsCustomDaily', cdv);
+          await DB.setSetting('smsCustomSport', csv);
+          UI.toast('متن پیامک ذخیره شد', 'ok');
+        } catch (err) { UI.toast('ذخیره نشد', 'bad'); }
+      } else if (a === 'persist') {
         var ok = await DB.requestPersistence();
         UI.toast(ok ? 'محافظت از حافظه فعال شد' : 'Chrome این درخواست را نپذیرفت. پشتیبان‌گیری منظم را فراموش نکنید.', ok ? 'ok' : 'bad');
         App.go('settings');
