@@ -2,10 +2,54 @@
   'use strict';
   var NAMES = { 10: 'دهم', 11: 'یازدهم', 12: 'دوازدهم' };
   var collator = new Intl.Collator('fa');
-  var st = { grade: 10, query: '', root: null, all: [] };
+  var st = { grade: 10, query: '', root: null, all: [], phones: {} };
+
+  /* ---------- شماره موبایل والدین ---------- */
+
+  function latin(s) {
+    return String(s)
+      .replace(/[۰-۹]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); })
+      .replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); });
+  }
+
+  function normalizePhone(raw) {
+    var s = latin(raw || '').trim();
+    if (!s) return '';
+    var d = s.replace(/\D/g, '');
+    if (d.indexOf('0098') === 0) d = d.slice(4);
+    else if (d.indexOf('98') === 0 && d.length === 12) d = d.slice(2);
+    if (d.length === 10 && d.charAt(0) === '9') d = '0' + d;
+    return /^09\d{9}$/.test(d) ? d : null;
+  }
+
+  var Phones = {
+    normalize: normalizePhone,
+    all: async function () {
+      var m = await DB.getSetting('parentPhones', {});
+      return (m && typeof m === 'object' && !Array.isArray(m)) ? m : {};
+    },
+    setMany: async function (pairs) {
+      var m = await Phones.all();
+      Object.keys(pairs).forEach(function (id) {
+        if (pairs[id]) m[id] = pairs[id]; else delete m[id];
+      });
+      await DB.setSetting('parentPhones', m);
+    },
+    set: function (id, phone) {
+      var o = {};
+      o[id] = phone;
+      return Phones.setMany(o);
+    }
+  };
+  window.Phones = Phones;
+
+  var PHONE_MSG = 'شماره موبایل معتبر نیست (مثال: 09123456789)';
+
+  /* ---------- ابزارها ---------- */
 
   function ic(id) { return '<svg><use href="#i-' + id + '"/></svg>'; }
   function norm(s) { return String(s).replace(/ي/g, 'ی').replace(/ك/g, 'ک'); }
+  function cleanName(s) { return norm(s).replace(/\s+/g, ' ').trim(); }
 
   function parseNames(text) {
     return text.split(/[\r\n]+/).map(function (l) {
@@ -13,6 +57,22 @@
               .replace(/^[\s•\-–—*]+/, '').trim();
     }).filter(function (n) { return n && !/^[\d۰-۹٠-٩\s\.\-\)]+$/.test(n); });
   }
+
+  function parseEntries(text) {
+    return parseNames(text).map(function (line) {
+      var m = line.match(/(\+?[\d۰-۹٠-٩][\d۰-۹٠-٩\s\-]{8,}[\d۰-۹٠-٩])\s*$/);
+      if (m) {
+        var ph = normalizePhone(m[1]);
+        if (ph) {
+          var nm = line.slice(0, m.index).replace(/[\s,،\-–—:|;]+$/, '').trim();
+          if (nm) return { name: nm, phone: ph };
+        }
+      }
+      return { name: line, phone: '' };
+    });
+  }
+
+  /* ---------- صفحه ---------- */
 
   function render(root) {
     st.root = root; st.query = '';
@@ -41,8 +101,10 @@
   }
 
   async function reload() {
-    try { st.all = await DB.getPeople({ type: 'student' }); }
-    catch (e) { UI.toast('خطا در خواندن اطلاعات', 'bad'); st.all = []; }
+    try {
+      st.all = await DB.getPeople({ type: 'student' });
+      st.phones = await Phones.all();
+    } catch (e) { UI.toast('خطا در خواندن اطلاعات', 'bad'); st.all = []; st.phones = {}; }
     drawTabs(); drawList();
   }
 
@@ -67,7 +129,9 @@
     }
     if (!rows.length) { el.innerHTML = '<div class="empty">موردی پیدا نشد.</div>'; return; }
     el.innerHTML = rows.map(function (s, i) {
-      return '<div class="row"><div class="avatar">' + UI.fa(i + 1) + '</div><div class="name">' + UI.esc(s.name) + '</div>' +
+      var ph = st.phones[s.id];
+      return '<div class="row"><div class="avatar">' + UI.fa(i + 1) + '</div><div class="name">' + UI.esc(s.name) +
+        (ph ? '<small style="display:block;font-weight:500;font-size:.72rem;opacity:.65">والدین: ' + UI.fa(ph) + '</small>' : '') + '</div>' +
         '<button class="icon-btn" data-edit="' + s.id + '">' + ic('edit') + '</button>' +
         '<button class="icon-btn danger" data-del="' + s.id + '">' + ic('trash') + '</button></div>';
     }).join('');
@@ -76,13 +140,19 @@
   async function addOne() {
     var box = await UI.dialog({
       title: 'افزودن دانش‌آموز، پایه ' + NAMES[st.grade],
-      body: '<label>نام و نام خانوادگی</label><input type="text" id="fName" autocomplete="off">',
+      body: '<label>نام و نام خانوادگی</label><input type="text" id="fName" autocomplete="off">' +
+        '<label>شماره موبایل والدین (اختیاری)</label><input type="text" id="fPhone" inputmode="tel" autocomplete="off" placeholder="09123456789">',
       ok: 'افزودن',
-      validate: function (b) { return b.querySelector('#fName').value.trim() ? '' : 'نام را وارد کنید'; }
+      validate: function (b) {
+        if (!b.querySelector('#fName').value.trim()) return 'نام را وارد کنید';
+        return Phones.normalize(b.querySelector('#fPhone').value) === null ? PHONE_MSG : '';
+      }
     });
     if (!box) return;
     try {
-      await DB.addPerson({ name: box.querySelector('#fName').value, type: 'student', grade: st.grade });
+      var p = await DB.addPerson({ name: box.querySelector('#fName').value, type: 'student', grade: st.grade });
+      var phone = Phones.normalize(box.querySelector('#fPhone').value);
+      if (phone) await Phones.set(p.id, phone);
       UI.toast('اضافه شد', 'ok');
     } catch (e) { UI.toast(e.message, 'bad'); }
     reload();
@@ -92,17 +162,22 @@
     var box = await UI.dialog({
       title: 'ورود گروهی، پایه ' + NAMES[st.grade],
       body: '<label>هر نام در یک خط</label><textarea id="fMany"></textarea>' +
-        '<div class="hint">شماره ابتدای خط‌ها خودکار حذف می‌شود و نام‌های تکراری ثبت نمی‌شوند.</div>',
+        '<div class="hint">شماره ابتدای خط‌ها خودکار حذف می‌شود و نام‌های تکراری ثبت نمی‌شوند. اگر می‌خواهید، شماره موبایل والدین را آخر هر خط بنویسید (مثلاً: علی احمدی 09123456789).</div>',
       ok: 'ثبت فهرست',
-      validate: function (b) { return parseNames(b.querySelector('#fMany').value).length ? '' : 'حداقل یک نام وارد کنید'; }
+      validate: function (b) { return parseEntries(b.querySelector('#fMany').value).length ? '' : 'حداقل یک نام وارد کنید'; }
     });
     if (!box) return;
-    var list = parseNames(box.querySelector('#fMany').value).map(function (n) {
-      return { name: n, type: 'student', grade: st.grade };
-    });
+    var entries = parseEntries(box.querySelector('#fMany').value);
+    var byName = {};
+    entries.forEach(function (e) { if (e.phone) byName[cleanName(e.name)] = e.phone; });
+    var list = entries.map(function (e) { return { name: e.name, type: 'student', grade: st.grade }; });
     try {
       var r = await DB.addPeople(list);
-      UI.toast(UI.fa(r.added) + ' نفر اضافه شد' + (r.skipped ? ' (' + UI.fa(r.skipped) + ' تکراری رد شد)' : ''), 'ok');
+      var pairs = {}, n = 0;
+      r.people.forEach(function (p) { if (byName[p.name]) { pairs[p.id] = byName[p.name]; n++; } });
+      if (n) await Phones.setMany(pairs);
+      UI.toast(UI.fa(r.added) + ' نفر اضافه شد' + (n ? ' (' + UI.fa(n) + ' شماره ثبت شد)' : '') +
+        (r.skipped ? ' (' + UI.fa(r.skipped) + ' تکراری رد شد)' : ''), 'ok');
     } catch (e) { UI.toast(e.message, 'bad'); }
     reload();
   }
@@ -116,13 +191,19 @@
     var box = await UI.dialog({
       title: 'ویرایش دانش‌آموز',
       body: '<label>نام و نام خانوادگی</label><input type="text" id="fName" value="' + UI.esc(p.name) + '">' +
-        '<label>پایه</label><select id="fGrade">' + opts + '</select>',
+        '<label>پایه</label><select id="fGrade">' + opts + '</select>' +
+        '<label>شماره موبایل والدین (اختیاری)</label><input type="text" id="fPhone" inputmode="tel" autocomplete="off" value="' +
+        UI.esc(st.phones[id] || '') + '" placeholder="09123456789">',
       ok: 'ذخیره',
-      validate: function (b) { return b.querySelector('#fName').value.trim() ? '' : 'نام را وارد کنید'; }
+      validate: function (b) {
+        if (!b.querySelector('#fName').value.trim()) return 'نام را وارد کنید';
+        return Phones.normalize(b.querySelector('#fPhone').value) === null ? PHONE_MSG : '';
+      }
     });
     if (!box) return;
     try {
       await DB.updatePerson(id, { name: box.querySelector('#fName').value, grade: box.querySelector('#fGrade').value });
+      await Phones.set(id, Phones.normalize(box.querySelector('#fPhone').value));
       UI.toast('ذخیره شد', 'ok');
     } catch (e) { UI.toast(e.message, 'bad'); }
     reload();
@@ -131,9 +212,9 @@
   async function del(id) {
     var p = st.all.filter(function (s) { return s.id === id; })[0];
     if (!p) return;
-    var yes = await UI.confirm('«' + p.name + '» حذف شود؟ همه سوابق حضور و غیاب او هم پاک می‌شود و قابل برگشت نیست.', 'حذف', true);
+    var yes = await UI.confirm('«' + p.name + '» حذف شود؟ همه سوابق حضور و غیاب او و شماره والدینش هم پاک می‌شود و قابل برگشت نیست.', 'حذف', true);
     if (!yes) return;
-    try { await DB.deletePerson(id); UI.toast('حذف شد', 'ok'); }
+    try { await DB.deletePerson(id); await Phones.set(id, ''); UI.toast('حذف شد', 'ok'); }
     catch (e) { UI.toast(e.message, 'bad'); }
     reload();
   }
