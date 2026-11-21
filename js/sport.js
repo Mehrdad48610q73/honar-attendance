@@ -11,6 +11,7 @@
     reportTitle: 'گزارش غایبین ورزش',
     absentLabel: 'غایبین ورزش',
     emptyText: 'هنوز دانش‌آموزی ثبت نشده است.',
+    sms: 'sport',
     managePage: 'students',
     manageLabel: 'مدیریت دانش‌آموزان'
   });
