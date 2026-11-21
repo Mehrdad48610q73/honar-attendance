@@ -5,6 +5,7 @@
   var LABEL = { present: 'حاضر', absent: 'غایب', late: 'تأخیر', leave: 'مرخصی' };
   var ICON = { present: 'check', absent: 'x', late: 'clock', leave: 'leave' };
   var collator = new Intl.Collator('fa');
+  var SCHOOL = 'هنرستان هنرپویان';
 
   var CSS = '' +
     '.datebar{margin-top:14px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:8px;display:flex;align-items:center;gap:8px}' +
@@ -37,6 +38,12 @@
     '.abs-count{color:var(--red);font-size:.88rem;margin-right:6px}' +
     '.abs-grp{margin-top:8px;font-size:.88rem;line-height:2}' +
     '.abs-grp b{color:var(--blue)}' +
+    '.abs-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px dashed #E6EDF5}' +
+    '.abs-nm{flex:1;font-weight:600;font-size:.9rem}' +
+    '.sms-btn{display:flex;align-items:center;gap:5px;background:var(--green);color:#fff;border-radius:14px;padding:8px 12px;font-size:.78rem;font-weight:700;flex:none}' +
+    '.sms-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}' +
+    '.sms-btn.none{background:var(--blue-light);color:var(--blue)}' +
+    '.sms-btn:active{transform:scale(.95)}' +
     '.copy-big{width:100%;margin-top:14px;padding:16px;border-radius:20px;background:var(--navy);color:#fff;font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px}' +
     '.copy-big svg{width:22px;height:22px}' +
     '.copy-big:active{transform:scale(.98)}' +
@@ -78,7 +85,7 @@
   }
 
   function create(o) {
-    var st = { date: Jalali.todayString(), grade: 10, people: [], recs: {}, root: null, page: null, tk: 0 };
+    var st = { date: Jalali.todayString(), grade: 10, people: [], recs: {}, phones: {}, root: null, page: null, tk: 0 };
 
     function alive() { return st.page && st.page.isConnected; }
     function q(sel) { return st.page.querySelector(sel); }
@@ -134,6 +141,10 @@
       if (t) { st.grade = Number(t.getAttribute('data-g')); draw(); return; }
       t = e.target.closest('[data-copy-g]');
       if (t) { UI.copy(reportText(Number(t.getAttribute('data-copy-g')))); return; }
+      t = e.target.closest('[data-sms]');
+      if (t) { sendSms(t.getAttribute('data-sms')); return; }
+      t = e.target.closest('[data-phone]');
+      if (t) { askPhone(t.getAttribute('data-phone')); return; }
       t = e.target.closest('[data-toggle]');
       if (t) { toggle(t.getAttribute('data-toggle')); return; }
       t = e.target.closest('[data-more]');
@@ -148,7 +159,9 @@
       try {
         var people = await DB.getPeople({ type: o.type });
         var recs = await DB.getRecordsByDate(date, o.activity);
+        var phones = (o.sms && window.Phones) ? await Phones.all() : {};
         if (tk !== st.tk || !alive()) return;
+        st.phones = phones;
         st.people = people;
         st.recs = {};
         recs.forEach(function (r) { st.recs[r.personId] = r.status; });
@@ -222,6 +235,13 @@
       var h = '<h3>' + o.absentLabel + (now ? ' امروز' : ' این روز') + '<span class="abs-count">' + UI.fa(all.length) + ' نفر</span></h3>';
       if (!all.length) {
         h += '<div class="abs-grp">هیچ غایبی ثبت نشده است.</div>';
+      } else if (o.grades && o.sms) {
+        [10, 11, 12].forEach(function (g) {
+          var l = absentees(g);
+          if (!l.length) return;
+          h += '<div class="abs-grp"><b>پایه ' + GN[g] + ':</b></div>';
+          l.forEach(function (p) { h += absItem(p); });
+        });
       } else if (o.grades) {
         [10, 11, 12].forEach(function (g) {
           var l = absentees(g);
@@ -237,6 +257,56 @@
         }).join('') + '</div>';
       }
       q('#aAbs').innerHTML = h;
+    }
+
+    var SMS_ICON = '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+
+    function absItem(p) {
+      var has = !!st.phones[p.id];
+      return '<div class="abs-item"><span class="abs-nm">' + UI.esc(p.name) + '</span>' +
+        (has ? '<button class="sms-btn" data-sms="' + p.id + '">' + SMS_ICON + 'پیام به والدین</button>'
+             : '<button class="sms-btn none" data-phone="' + p.id + '">+ شماره والدین</button>') + '</div>';
+    }
+
+    function smsText(p) {
+      var isToday = st.date === Jalali.todayString();
+      var pp = Jalali.parse(st.date);
+      var day = Jalali.DAYS[Jalali.weekday(pp.jy, pp.jm, pp.jd)];
+      var when = (isToday ? 'امروز ' : 'در روز ') + day + ' مورخ ' + UI.fa(st.date.replace(/-/g, '/'));
+      var what = o.sms === 'sport' ? 'در کلاس ورزش غایب می‌باشد' : 'غایب می‌باشد';
+      return 'با سلام، والدین گرامی\nبه اطلاع می‌رساند دانش‌آموز ' + p.name + ' ' + when + ' ' + what +
+        '. لطفاً در این خصوص اطلاع‌رسانی فرمایید.\n' + SCHOOL;
+    }
+
+    function openSms(phone, text) {
+      location.href = 'sms:' + phone + '?body=' + encodeURIComponent(text);
+    }
+
+    function sendSms(id) {
+      var p = find(id);
+      if (!p) return;
+      var phone = st.phones[id];
+      if (!phone) { askPhone(id); return; }
+      openSms(phone, smsText(p));
+    }
+
+    async function askPhone(id) {
+      var p = find(id);
+      if (!p || !window.Phones) return;
+      var box = await UI.dialog({
+        title: 'شماره والدین — ' + p.name,
+        body: '<label>شماره موبایل والدین</label><input type="text" id="fPhone" inputmode="tel" autocomplete="off" placeholder="09123456789">',
+        ok: 'ذخیره و ارسال پیام',
+        validate: function (b) {
+          return Phones.normalize(b.querySelector('#fPhone').value) ? '' : 'شماره موبایل معتبر نیست (مثال: 09123456789)';
+        }
+      });
+      if (!box) return;
+      var phone = Phones.normalize(box.querySelector('#fPhone').value);
+      try { await Phones.set(id, phone); st.phones[id] = phone; }
+      catch (e) { UI.toast('ذخیره شماره انجام نشد', 'bad'); return; }
+      if (alive()) drawAbs();
+      openSms(phone, smsText(p));
     }
 
     function reportText(onlyGrade) {
@@ -319,6 +389,7 @@
     reportTitle: 'گزارش غایبین هنرستان',
     absentLabel: 'غایبین',
     emptyText: 'هنوز دانش‌آموزی ثبت نشده است.',
+    sms: 'daily',
     managePage: 'students',
     manageLabel: 'مدیریت دانش‌آموزان'
   });
