@@ -5,7 +5,68 @@
   var LABEL = { present: 'حاضر', absent: 'غایب', late: 'تأخیر', leave: 'مرخصی' };
   var ICON = { present: 'check', absent: 'x', late: 'clock', leave: 'leave' };
   var collator = new Intl.Collator('fa');
-  var SCHOOL = 'هنرستان هنرپویان';
+
+  /* ---------- متن پیامک والدین (قابل تنظیم) ---------- */
+
+  var DEFAULT_SCHOOL = 'هنرستان هنرپویان';
+  var SMS_ORDER = ['formal', 'short', 'polite', 'concerned'];
+  var SMS_STYLES = {
+    formal: {
+      label: 'رسمی (پیش‌فرض)',
+      daily: 'با سلام، والدین گرامی\nبه اطلاع می‌رساند دانش‌آموز {نام} {امروز} {روز} مورخ {تاریخ} غایب می‌باشد. لطفاً در این خصوص اطلاع‌رسانی فرمایید.\n{مدرسه}',
+      sport: 'با سلام، والدین گرامی\nبه اطلاع می‌رساند دانش‌آموز {نام} {امروز} {روز} مورخ {تاریخ} در کلاس ورزش غایب می‌باشد. لطفاً در این خصوص اطلاع‌رسانی فرمایید.\n{مدرسه}'
+    },
+    short: {
+      label: 'کوتاه و ساده',
+      daily: 'والدین گرامی، {نام} {امروز} {روز} مورخ {تاریخ} در مدرسه حضور نداشت. لطفاً علت غیبت را به مدرسه اطلاع دهید.\n{مدرسه}',
+      sport: 'والدین گرامی، {نام} {امروز} {روز} مورخ {تاریخ} در کلاس ورزش حضور نداشت. لطفاً علت غیبت را به مدرسه اطلاع دهید.\n{مدرسه}'
+    },
+    polite: {
+      label: 'مؤدبانه',
+      daily: 'سلام و احترام\nدانش‌آموز {نام} {امروز} {روز} مورخ {تاریخ} در مدرسه حاضر نشده است. خواهشمندیم علت غیبت را به اطلاع ما برسانید. سپاس از همراهی شما\n{مدرسه}',
+      sport: 'سلام و احترام\nدانش‌آموز {نام} {امروز} {روز} مورخ {تاریخ} در کلاس ورزش حاضر نشده است. خواهشمندیم علت غیبت را به اطلاع ما برسانید. سپاس از همراهی شما\n{مدرسه}'
+    },
+    concerned: {
+      label: 'اطلاع‌رسانی به والدین',
+      daily: 'والدین محترم، با سلام\nفرزند شما {نام} {امروز} {روز} مورخ {تاریخ} در کلاس‌های مدرسه غایب بود. اگر از این موضوع اطلاع نداشتید، لطفاً با مدرسه تماس بگیرید.\n{مدرسه}',
+      sport: 'والدین محترم، با سلام\nفرزند شما {نام} {امروز} {روز} مورخ {تاریخ} در کلاس ورزش غایب بود. اگر از این موضوع اطلاع نداشتید، لطفاً با مدرسه تماس بگیرید.\n{مدرسه}'
+    }
+  };
+
+  function smsDefaults() { return { style: 'formal', school: DEFAULT_SCHOOL, cd: '', cs: '' }; }
+
+  async function smsLoad() {
+    return {
+      style: await DB.getSetting('smsStyle', 'formal'),
+      school: (await DB.getSetting('schoolName', DEFAULT_SCHOOL)) || DEFAULT_SCHOOL,
+      cd: await DB.getSetting('smsCustomDaily', ''),
+      cs: await DB.getSetting('smsCustomSport', '')
+    };
+  }
+
+  function smsBuild(cfg, kind, vars, forceStyle) {
+    var style = forceStyle || cfg.style, tpl;
+    if (style === 'custom') {
+      tpl = (kind === 'sport' ? cfg.cs : cfg.cd) || SMS_STYLES.formal[kind];
+    } else if (style === 'auto') {
+      tpl = SMS_STYLES[SMS_ORDER[Math.floor(Math.random() * SMS_ORDER.length)]][kind];
+    } else {
+      tpl = (SMS_STYLES[style] || SMS_STYLES.formal)[kind];
+    }
+    var all = { 'نام': vars['نام'], 'روز': vars['روز'], 'تاریخ': vars['تاریخ'], 'امروز': vars['امروز'], 'مدرسه': cfg.school || DEFAULT_SCHOOL };
+    return tpl.replace(/\{(نام|روز|تاریخ|امروز|مدرسه)\}/g, function (m, k) { return all[k]; })
+      .replace(/[ \t]{2,}/g, ' ').replace(/ *\n */g, '\n').trim();
+  }
+
+  function smsSample() {
+    var t = Jalali.todayString(), p = Jalali.parse(t);
+    return { 'نام': 'علی احمدی', 'روز': Jalali.DAYS[Jalali.weekday(p.jy, p.jm, p.jd)], 'تاریخ': UI.fa(t.replace(/-/g, '/')), 'امروز': 'امروز' };
+  }
+
+  window.SmsTpl = {
+    STYLES: SMS_STYLES, ORDER: SMS_ORDER, DEFAULT_SCHOOL: DEFAULT_SCHOOL,
+    defaults: smsDefaults, load: smsLoad, build: smsBuild, sample: smsSample
+  };
 
   var CSS = '' +
     '.datebar{margin-top:14px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:8px;display:flex;align-items:center;gap:8px}' +
@@ -44,6 +105,7 @@
     '.sms-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}' +
     '.sms-btn.none{background:var(--blue-light);color:var(--blue)}' +
     '.sms-btn:active{transform:scale(.95)}' +
+    '.sms-set{margin-top:12px;background:none;color:var(--blue);font-size:.8rem;font-weight:700;padding:4px 0}' +
     '.copy-big{width:100%;margin-top:14px;padding:16px;border-radius:20px;background:var(--navy);color:#fff;font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px}' +
     '.copy-big svg{width:22px;height:22px}' +
     '.copy-big:active{transform:scale(.98)}' +
@@ -85,7 +147,7 @@
   }
 
   function create(o) {
-    var st = { date: Jalali.todayString(), grade: 10, people: [], recs: {}, phones: {}, root: null, page: null, tk: 0 };
+    var st = { date: Jalali.todayString(), grade: 10, people: [], recs: {}, phones: {}, smsCfg: null, root: null, page: null, tk: 0 };
 
     function alive() { return st.page && st.page.isConnected; }
     function q(sel) { return st.page.querySelector(sel); }
@@ -160,8 +222,10 @@
         var people = await DB.getPeople({ type: o.type });
         var recs = await DB.getRecordsByDate(date, o.activity);
         var phones = (o.sms && window.Phones) ? await Phones.all() : {};
+        var smsCfg = o.sms ? await SmsTpl.load() : null;
         if (tk !== st.tk || !alive()) return;
         st.phones = phones;
+        st.smsCfg = smsCfg;
         st.people = people;
         st.recs = {};
         recs.forEach(function (r) { st.recs[r.personId] = r.status; });
@@ -251,6 +315,7 @@
         h += '<div class="abs-grp">' + all.map(function (p) { return UI.esc(p.name); }).join('، ') + '</div>';
       }
       h += '<button class="copy-big" data-act="copy-all">' + ic('copy') + 'کپی اسامی غایبین</button>';
+      if (o.sms) h += '<button class="sms-set" data-page="settings">✎ تغییر متن پیامک و نام مدرسه</button>';
       if (o.grades) {
         h += '<div class="copy-mini">' + [10, 11, 12].map(function (g) {
           return '<button class="btn ghost" data-copy-g="' + g + '">کپی پایه ' + GN[g] + '</button>';
@@ -271,11 +336,13 @@
     function smsText(p) {
       var isToday = st.date === Jalali.todayString();
       var pp = Jalali.parse(st.date);
-      var day = Jalali.DAYS[Jalali.weekday(pp.jy, pp.jm, pp.jd)];
-      var when = (isToday ? 'امروز ' : 'در روز ') + day + ' مورخ ' + UI.fa(st.date.replace(/-/g, '/'));
-      var what = o.sms === 'sport' ? 'در کلاس ورزش غایب می‌باشد' : 'غایب می‌باشد';
-      return 'با سلام، والدین گرامی\nبه اطلاع می‌رساند دانش‌آموز ' + p.name + ' ' + when + ' ' + what +
-        '. لطفاً در این خصوص اطلاع‌رسانی فرمایید.\n' + SCHOOL;
+      var vars = {
+        'نام': p.name,
+        'روز': Jalali.DAYS[Jalali.weekday(pp.jy, pp.jm, pp.jd)],
+        'تاریخ': UI.fa(st.date.replace(/-/g, '/')),
+        'امروز': isToday ? 'امروز' : 'در روز'
+      };
+      return SmsTpl.build(st.smsCfg || SmsTpl.defaults(), o.sms === 'sport' ? 'sport' : 'daily', vars);
     }
 
     function openSms(phone, text) {
