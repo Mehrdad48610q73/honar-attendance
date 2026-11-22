@@ -1,7 +1,7 @@
 {
-  "name": "HONAR ATTENDANCE — حضور و غیاب هنرستان",
-  "short_name": "حضور و غیاب",
-  "description": "مدیریت حضور و غیاب هنرستان بدون نیاز به اینترنت",
+  "name": "hozor — حضور",
+  "short_name": "حضور",
+  "description": "hozor (حضور): مدیریت حضور و غیاب هنرستان بدون نیاز به اینترنت",
   "lang": "fa",
   "dir": "rtl",
   "start_url": "./index.html",
