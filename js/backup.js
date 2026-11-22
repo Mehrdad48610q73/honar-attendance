@@ -95,7 +95,7 @@
   function validate(obj) {
     function bad(msg) { return { ok: false, error: msg }; }
     if (!isObj(obj)) return bad('ساختار فایل درست نیست.');
-    if (obj.app !== APP_ID) return bad('این فایل، پشتیبان برنامه HONAR ATTENDANCE نیست.');
+    if (obj.app !== APP_ID) return bad('این فایل، پشتیبان برنامه hozor (حضور) نیست.');
     if (typeof obj.formatVersion !== 'number' || obj.formatVersion > FORMAT) {
       return bad('این فایل با نسخه‌ای جدیدتر از برنامه ساخته شده و قابل بازیابی نیست.');
     }
@@ -167,7 +167,7 @@
 
   function fileName() {
     var s = stamp(new Date());
-    return 'honar-backup-' + s.date + '-' + s.time.replace(':', '') + '.json';
+    return 'hozor-backup-' + s.date + '-' + s.time.replace(':', '') + '.json';
   }
 
   async function saveBackup() {
@@ -202,7 +202,7 @@
     try {
       var obj = await buildBackup();
       var file = new File([JSON.stringify(obj)], fileName(), { type: 'application/json' });
-      await navigator.share({ files: [file], title: 'پشتیبان HONAR ATTENDANCE' });
+      await navigator.share({ files: [file], title: 'پشتیبان hozor (حضور)' });
       UI.toast('فایل پشتیبان ارسال شد', 'ok');
       refreshNote();
       if (location.hash.slice(1) === 'backup') App.go('backup');
@@ -388,7 +388,7 @@
       '<div class="bk-card bk-danger"><h3>حذف همه اطلاعات</h3>' +
       '<div class="bk-line">همه دانش‌آموزان، دبیران، مسئولان و سوابق حضور و غیاب پاک می‌شود و قابل برگشت نیست، مگر اینکه فایل پشتیبان داشته باشید.</div>' +
       '<div class="bk-col"><button class="btn danger" data-act="wipe">حذف همه اطلاعات</button></div></div>' +
-      '<div class="bk-card"><h3>درباره برنامه</h3><div class="bk-line">HONAR ATTENDANCE — نسخه ۱٫۰<br>مدیریت حضور و غیاب هنرستان، بدون نیاز به اینترنت<br><b>توسعه داده شده توسط مهرداد بایرامی</b></div></div>';
+      '<div class="bk-card"><h3>درباره برنامه</h3><div class="bk-line">hozor (حضور) — نسخه ۱٫۰<br>مدیریت حضور و غیاب هنرستان، بدون نیاز به اینترنت<br><b>توسعه داده شده توسط مهرداد بایرامی</b></div></div>';
     if (sms) updateSmsPreview();
     function updateSmsPreview() {
       var style = page.querySelector('#smsStyle').value;
