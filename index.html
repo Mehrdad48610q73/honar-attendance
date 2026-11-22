@@ -14,8 +14,29 @@
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/pages.css">
+  <script>try{if(sessionStorage.getItem('honarSplash')==='1')document.documentElement.className='nosplash';}catch(e){}</script>
+  <style>
+    #splash{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#102B50,#2878C7);color:#fff;transition:opacity .5s ease,transform .5s ease}
+    #splash.hide{opacity:0;transform:scale(1.04);pointer-events:none}
+    .nosplash #splash{display:none}
+    #splash .sp-logo{position:relative;width:112px;height:112px}
+    #splash .sp-logo img{width:112px;height:112px;object-fit:contain;border-radius:28px;box-shadow:0 12px 40px rgba(0,0,0,.35);animation:spPop .9s cubic-bezier(.2,.9,.3,1.15) both}
+    #splash .sp-ring{position:absolute;top:-14px;left:-14px;right:-14px;bottom:-14px;border-radius:40px;border:2px solid rgba(255,255,255,.4);animation:spRing 1.7s ease-out .6s infinite}
+    #splash h1{margin-top:30px;font-size:1.15rem;letter-spacing:.14em;font-weight:800;animation:spUp .7s ease .4s both}
+    #splash p{margin-top:6px;font-size:.9rem;opacity:.85;animation:spUp .7s ease .6s both}
+    @keyframes spPop{0%{opacity:0;transform:scale(.55)}60%{opacity:1}100%{opacity:1;transform:scale(1)}}
+    @keyframes spUp{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:none}}
+    @keyframes spRing{0%{opacity:.7;transform:scale(.92)}100%{opacity:0;transform:scale(1.35)}}
+    @media (prefers-reduced-motion:reduce){#splash *{animation:none!important}}
+  </style>
 </head>
 <body>
+
+<div id="splash">
+  <div class="sp-logo"><div class="sp-ring"></div><img id="spLogo" src="logo.png" alt="" onerror="this.onerror=null;this.src='icon-512.png'"></div>
+  <h1>HONAR ATTENDANCE</h1>
+  <p>مدیریت حضور و غیاب هنرستان</p>
+</div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
@@ -121,6 +142,28 @@
 
 <script>
 (function () {
+  var sp = document.getElementById('splash');
+  if (sp) {
+    var seen = false;
+    try { seen = sessionStorage.getItem('honarSplash') === '1'; } catch (e) {}
+    if (seen) {
+      sp.remove();
+    } else {
+      try { sessionStorage.setItem('honarSplash', '1'); } catch (e) {}
+      var t0 = Date.now(), done = false;
+      var hideSplash = function () {
+        if (done) return;
+        done = true;
+        setTimeout(function () {
+          sp.classList.add('hide');
+          setTimeout(function () { sp.remove(); }, 600);
+        }, Math.max(0, 1500 - (Date.now() - t0)));
+      };
+      if (document.readyState === 'complete') hideSplash();
+      else window.addEventListener('load', hideSplash);
+      setTimeout(hideSplash, 4500);
+    }
+  }
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('sw.js').catch(function () {});
@@ -143,4 +186,4 @@
 </script>
 
 </body>
-    </html>
+</html>
