@@ -1,7 +1,6 @@
 (function () {
   'use strict';
 
-  var GN = { 10: 'دهم', 11: 'یازدهم', 12: 'دوازدهم' };
   var collator = new Intl.Collator('fa');
   var SUFFIX = { absent: '', late: ' (تأخیر)', leave: ' (مرخصی)' };
   var BADGE = { late: 'تأخیر', leave: 'مرخصی' };
@@ -13,13 +12,13 @@
   ];
 
   var CSS = '' +
-    '.cal-bar{margin-top:14px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:8px;display:flex;align-items:center;gap:8px}' +
+    '.cal-bar{margin-top:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:8px;display:flex;align-items:center;gap:8px}' +
     '.cal-nav{width:42px;height:42px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:grid;place-items:center;flex:none}' +
     '.cal-nav svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}' +
     '.cal-nav.flip svg{transform:scaleX(-1)}' +
     '.cal-title{flex:1;background:none;color:var(--navy);font-weight:800;font-size:1.05rem;padding:6px 4px}' +
     '.cal-today{background:var(--navy);color:#fff;border-radius:14px;padding:8px 12px;font-size:.8rem;font-weight:700;flex:none}' +
-    '.cal-card{margin-top:12px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 8px}' +
+    '.cal-card{margin-top:12px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 8px}' +
     '.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}' +
     '.cal-wd{text-align:center;font-size:.72rem;font-weight:700;color:#7C8CA3;padding:4px 0}' +
     '.cal-wd.fri{color:var(--red)}' +
@@ -34,7 +33,7 @@
     '.cal-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;padding:0 6px;font-size:.72rem;opacity:.85}' +
     '.cal-legend span{display:flex;align-items:center;gap:4px}' +
     '.cal-legend i{width:8px;height:8px;border-radius:50%;display:inline-block}' +
-    '.cal-detail{margin-top:14px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}' +
+    '.cal-detail{margin-top:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}' +
     '.cal-detail h3{font-size:1rem;margin-bottom:4px}' +
     '.cal-sec{margin-top:12px}' +
     '.cal-sec h4{font-size:.9rem;display:flex;align-items:center;gap:6px;margin-bottom:2px}' +
@@ -65,6 +64,8 @@
   function q(sel) { return st.page.querySelector(sel); }
   function byName(a, b) { return collator.compare(a.p.name, b.p.name); }
 
+  function monthKey(jy, jm) { return jy * 100 + jm; }
+
   function defaultSel(jy, jm) {
     var t = Jalali.today();
     return (t.jy === jy && t.jm === jm) ? Jalali.format(jy, jm, t.jd) : Jalali.format(jy, jm, 1);
@@ -80,9 +81,9 @@
       if (!rs.length) return;
       var blocks = [];
       if (g.grades) {
-        [10, 11, 12].forEach(function (gr) {
+        Grades.ids().forEach(function (gr) {
           var items = rs.filter(function (x) { return x.p.grade === gr; }).sort(byName);
-          if (items.length) blocks.push({ sub: 'پایه ' + GN[gr], items: items });
+          if (items.length) blocks.push({ sub: Grades.name(gr), items: items });
         });
       } else {
         rs.sort(function (a, b) { return (a.p.order || 0) - (b.p.order || 0); });
@@ -95,7 +96,7 @@
 
   function reportText(date) {
     var secs = buildSections(date);
-    var L = ['گزارش حضور و غیاب هنرستان', 'تاریخ: ' + Jalali.longDate(date), ''];
+    var L = ['گزارش حضور و غیاب مدرسه', 'تاریخ: ' + Jalali.longDate(date), ''];
     if (!secs.length) { L.push('غیبتی ثبت نشده است.'); return L.join('\n'); }
     secs.forEach(function (s) {
       L.push(s.title + ':');
@@ -166,7 +167,9 @@
     try {
       var first = Jalali.format(jy, jm, 1);
       var last = Jalali.format(jy, jm, Jalali.monthLength(jy, jm));
+      await Grades.load();
       var all = await DB.getPeople();
+      Grades.sync(all);
       var recs = await DB.getRecordsInRange(first, last);
       if (tk !== st.tk || !alive()) return;
       st.people = {};

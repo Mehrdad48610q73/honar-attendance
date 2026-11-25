@@ -1,8 +1,60 @@
 (function () {
   'use strict';
-  var NAMES = { 10: 'دهم', 11: 'یازدهم', 12: 'دوازدهم' };
   var collator = new Intl.Collator('fa');
-  var st = { grade: 10, query: '', root: null, all: [], phones: {} };
+  var st = { grade: 0, query: '', root: null, all: [], phones: {} };
+
+  /* ---------- پایه‌ها (قابل تنظیم) ---------- */
+
+  // فقط برای نام‌گذاری داده‌های قدیمی (دانش‌آموزانی که قبل از این قابلیت ثبت شده‌اند)
+  var LEGACY_NAMES = { 10: 'پایه دهم', 11: 'پایه یازدهم', 12: 'پایه دوازدهم' };
+
+  function validGradeList(v) {
+    if (!Array.isArray(v)) return false;
+    var seen = {};
+    return v.every(function (g) {
+      if (!g || !Number.isInteger(g.id) || g.id <= 0 || typeof g.name !== 'string' || !g.name.trim() || seen[g.id]) return false;
+      seen[g.id] = true;
+      return true;
+    });
+  }
+
+  var Grades = {
+    list: [],
+    load: async function () {
+      var v = await DB.getSetting('gradeList', null);
+      if (validGradeList(v)) { Grades.list = v; return v; }
+      // هنوز فهرست پایه ذخیره نشده: از روی دانش‌آموزان موجود ساخته می‌شود (نصب‌های قدیمی)
+      var people = await DB.getPeople({ type: 'student' });
+      var seen = {};
+      people.forEach(function (p) { if (p.grade) seen[p.grade] = true; });
+      var list = Object.keys(seen).map(Number).sort(function (a, b) { return a - b; }).map(function (id) {
+        return { id: id, name: LEGACY_NAMES[id] || ('پایه ' + id) };
+      });
+      Grades.list = list;
+      if (list.length) await DB.setSetting('gradeList', list);
+      return list;
+    },
+    save: async function (list) {
+      await DB.setSetting('gradeList', list);
+      Grades.list = list;
+    },
+    ids: function () { return Grades.list.map(function (g) { return g.id; }); },
+    has: function (id) { return Grades.list.some(function (g) { return g.id === id; }); },
+    index: function (id) {
+      for (var i = 0; i < Grades.list.length; i++) if (Grades.list[i].id === id) return i;
+      return 999;
+    },
+    name: function (id) {
+      for (var i = 0; i < Grades.list.length; i++) if (Grades.list[i].id === id) return Grades.list[i].name;
+      return 'پایه ' + id;
+    },
+    sync: function (people) {
+      people.forEach(function (p) {
+        if (p.type === 'student' && p.grade && !Grades.has(p.grade)) Grades.list.push({ id: p.grade, name: 'پایه ' + p.grade });
+      });
+    }
+  };
+  window.Grades = Grades;
 
   /* ---------- شماره موبایل والدین ---------- */
 
@@ -80,6 +132,7 @@
       '<div class="page">' +
       '<div class="page-head"><button class="back" data-page="dashboard">' + ic('back') + '</button><h2>مدیریت دانش‌آموزان</h2></div>' +
       '<div class="tabs" id="gTabs"></div>' +
+      '<button class="link-btn" id="sGrades">⚙ مدیریت پایه‌ها (افزودن، تغییر نام، حذف)</button>' +
       '<div class="searchbox">' + ic('search') + '<input id="sQ" type="search" placeholder="جستجوی نام"></div>' +
       '<div class="btn-row"><button class="btn primary" id="sAdd">' + ic('plus') + 'افزودن</button>' +
       '<button class="btn ghost" id="sBulk">' + ic('list') + 'ورود گروهی</button></div>' +
@@ -87,6 +140,7 @@
     root.querySelector('#sQ').addEventListener('input', function (e) { st.query = e.target.value; drawList(); });
     root.querySelector('#sAdd').addEventListener('click', addOne);
     root.querySelector('#sBulk').addEventListener('click', addMany);
+    root.querySelector('#sGrades').addEventListener('click', manageGrades);
     root.querySelector('#gTabs').addEventListener('click', function (e) {
       var b = e.target.closest('[data-g]');
       if (!b) return;
@@ -102,16 +156,19 @@
 
   async function reload() {
     try {
+      await Grades.load();
       st.all = await DB.getPeople({ type: 'student' });
       st.phones = await Phones.all();
+      Grades.sync(st.all);
     } catch (e) { UI.toast('خطا در خواندن اطلاعات', 'bad'); st.all = []; st.phones = {}; }
+    if (!Grades.has(st.grade)) st.grade = Grades.list.length ? Grades.list[0].id : 0;
     drawTabs(); drawList();
   }
 
   function drawTabs() {
-    st.root.querySelector('#gTabs').innerHTML = [10, 11, 12].map(function (g) {
-      var n = st.all.filter(function (s) { return s.grade === g; }).length;
-      return '<button class="tab' + (g === st.grade ? ' active' : '') + '" data-g="' + g + '">پایه ' + NAMES[g] +
+    st.root.querySelector('#gTabs').innerHTML = Grades.list.map(function (g) {
+      var n = st.all.filter(function (s) { return s.grade === g.id; }).length;
+      return '<button class="tab' + (g.id === st.grade ? ' active' : '') + '" data-g="' + g.id + '">' + UI.esc(g.name) +
         '<small>' + UI.fa(n) + ' نفر</small></button>';
     }).join('');
   }
@@ -122,9 +179,16 @@
     var rows = inGrade.filter(function (s) { return !q || norm(s.name).indexOf(q) !== -1; })
       .sort(function (a, b) { return collator.compare(a.name, b.name); });
     var el = st.root.querySelector('#sList');
+    if (!Grades.list.length) {
+      el.innerHTML = '<div class="empty">هنوز هیچ پایه‌ای تعریف نشده است.<br>ابتدا پایه‌های مدرسه را بسازید (مثلاً «هفتم»، «هشتم» یا هر اسم دیگر).<br><br>' +
+        '<button class="btn primary" id="sFirstGrade">' + ic('plus') + 'تعریف پایه‌ها</button></div>';
+      var fb = el.querySelector('#sFirstGrade');
+      if (fb) fb.addEventListener('click', manageGrades);
+      return;
+    }
     if (!inGrade.length) {
-      el.innerHTML = '<div class="empty">هنوز دانش‌آموزی برای پایه ' + NAMES[st.grade] +
-        ' ثبت نشده است.<br>با «ورود گروهی» می‌توانید کل فهرست را یک‌جا Paste کنید.</div>';
+      el.innerHTML = '<div class="empty">هنوز دانش‌آموزی برای «' + UI.esc(Grades.name(st.grade)) +
+        '» ثبت نشده است.<br>با «ورود گروهی» می‌توانید کل فهرست را یک‌جا Paste کنید.</div>';
       return;
     }
     if (!rows.length) { el.innerHTML = '<div class="empty">موردی پیدا نشد.</div>'; return; }
@@ -137,9 +201,88 @@
     }).join('');
   }
 
+  /* ---------- مدیریت پایه‌ها ---------- */
+
+  function manageGrades() {
+    var work = Grades.list.map(function (g) { return { id: g.id, name: g.name }; });
+    var counts = {};
+    st.all.forEach(function (s) { counts[s.grade] = (counts[s.grade] || 0) + 1; });
+    var ov = document.createElement('div');
+    ov.className = 'overlay';
+    document.body.appendChild(ov);
+
+    function draw() {
+      ov.innerHTML = '<div class="dlg"><h3>مدیریت پایه‌ها</h3>' +
+        '<div class="hint">نام هر پایه را هر طور خواستید بنویسید (مثلاً «هفتم»، «پایه دهم رشته الف»). با فلش‌ها ترتیب را عوض کنید.</div>' +
+        '<div>' + work.map(function (g, i) {
+          return '<div class="gm-row"><input type="text" data-i="' + i + '" value="' + UI.esc(g.name) + '">' +
+            '<button class="gm-btn up" data-up="' + i + '">' + ic('back') + '</button>' +
+            '<button class="gm-btn dn" data-dn="' + i + '">' + ic('back') + '</button>' +
+            '<button class="gm-btn del" data-del="' + i + '">' + ic('trash') + '</button></div>';
+        }).join('') + '</div>' +
+        '<button class="btn ghost" data-add style="margin-top:12px;width:100%">' + ic('plus') + 'افزودن پایه جدید</button>' +
+        '<div class="dlg-err" hidden></div>' +
+        '<div class="dlg-actions"><button class="btn primary" data-save>ذخیره</button><button class="btn ghost" data-cancel>انصراف</button></div></div>';
+    }
+    function showErr(m) { var e = ov.querySelector('.dlg-err'); e.textContent = m; e.hidden = false; }
+    draw();
+
+    ov.addEventListener('input', function (e) {
+      var i = e.target.getAttribute('data-i');
+      if (i !== null) work[Number(i)].name = e.target.value;
+    });
+    ov.addEventListener('click', async function (e) {
+      var t = e.target.closest('button');
+      if (!t) { if (e.target === ov) ov.remove(); return; }
+      if (t.hasAttribute('data-cancel')) { ov.remove(); return; }
+      if (t.hasAttribute('data-add')) {
+        var next = Math.max.apply(null, work.map(function (g) { return g.id; }).concat(Object.keys(counts).map(Number)).concat([0])) + 1;
+        work.push({ id: next, name: '' });
+        draw();
+        var inputs = ov.querySelectorAll('input[data-i]');
+        if (inputs.length) inputs[inputs.length - 1].focus();
+        return;
+      }
+      if (t.hasAttribute('data-up') || t.hasAttribute('data-dn')) {
+        var up = t.hasAttribute('data-up');
+        var i = Number(t.getAttribute(up ? 'data-up' : 'data-dn')), j = up ? i - 1 : i + 1;
+        if (j < 0 || j >= work.length) return;
+        var tmp = work[i]; work[i] = work[j]; work[j] = tmp;
+        draw();
+        return;
+      }
+      if (t.hasAttribute('data-del')) {
+        var k = Number(t.getAttribute('data-del'));
+        if (counts[work[k].id]) { showErr('این پایه دانش‌آموز دارد. ابتدا آن‌ها را به پایه دیگری ببرید (ویرایش دانش‌آموز) یا حذف کنید.'); return; }
+        work.splice(k, 1);
+        draw();
+        return;
+      }
+      if (t.hasAttribute('data-save')) {
+        var names = {};
+        for (var n = 0; n < work.length; n++) {
+          var nm = work[n].name.trim();
+          if (!nm) { showErr('نام همه پایه‌ها را وارد کنید.'); return; }
+          if (names[nm]) { showErr('نام دو پایه نباید یکسان باشد.'); return; }
+          names[nm] = true;
+          work[n].name = nm;
+        }
+        try {
+          await Grades.save(work);
+          ov.remove();
+          UI.toast('پایه‌ها ذخیره شد', 'ok');
+          reload();
+        } catch (err) { showErr('ذخیره انجام نشد.'); }
+      }
+    });
+  }
+
+  /* ---------- افزودن، ویرایش، حذف ---------- */
+
   async function addOne() {
+    if (!Grades.list.length) { manageGrades(); return; }
     var box = await UI.dialog({
-      title: 'افزودن دانش‌آموز، پایه ' + NAMES[st.grade],
+      title: 'افزودن دانش‌آموز، ' + Grades.name(st.grade),
       body: '<label>نام و نام خانوادگی</label><input type="text" id="fName" autocomplete="off">' +
         '<label>شماره موبایل والدین (اختیاری)</label><input type="text" id="fPhone" inputmode="tel" autocomplete="off" placeholder="09123456789">',
       ok: 'افزودن',
@@ -159,8 +302,9 @@
   }
 
   async function addMany() {
+    if (!Grades.list.length) { manageGrades(); return; }
     var box = await UI.dialog({
-      title: 'ورود گروهی، پایه ' + NAMES[st.grade],
+      title: 'ورود گروهی، ' + Grades.name(st.grade),
       body: '<label>هر نام در یک خط</label><textarea id="fMany"></textarea>' +
         '<div class="hint">شماره ابتدای خط‌ها خودکار حذف می‌شود و نام‌های تکراری ثبت نمی‌شوند. اگر می‌خواهید، شماره موبایل والدین را آخر هر خط بنویسید (مثلاً: علی احمدی 09123456789).</div>',
       ok: 'ثبت فهرست',
@@ -185,8 +329,8 @@
   async function edit(id) {
     var p = st.all.filter(function (s) { return s.id === id; })[0];
     if (!p) return;
-    var opts = [10, 11, 12].map(function (g) {
-      return '<option value="' + g + '"' + (g === p.grade ? ' selected' : '') + '>پایه ' + NAMES[g] + '</option>';
+    var opts = Grades.list.map(function (g) {
+      return '<option value="' + g.id + '"' + (g.id === p.grade ? ' selected' : '') + '>' + UI.esc(g.name) + '</option>';
     }).join('');
     var box = await UI.dialog({
       title: 'ویرایش دانش‌آموز',
@@ -212,10 +356,14 @@
   async function del(id) {
     var p = st.all.filter(function (s) { return s.id === id; })[0];
     if (!p) return;
-    var yes = await UI.confirm('«' + p.name + '» حذف شود؟ همه سوابق حضور و غیاب او و شماره والدینش هم پاک می‌شود و قابل برگشت نیست.', 'حذف', true);
+    var yes = await UI.confirm('«' + p.name + '» حذف شود؟ همه سوابق حضور و غیاب، گزارش‌های انضباطی و شماره والدینش هم پاک می‌شود و قابل برگشت نیست.', 'حذف', true);
     if (!yes) return;
-    try { await DB.deletePerson(id); await Phones.set(id, ''); UI.toast('حذف شد', 'ok'); }
-    catch (e) { UI.toast(e.message, 'bad'); }
+    try {
+      await DB.deletePerson(id);
+      await Phones.set(id, '');
+      if (window.Incidents) await Incidents.removeByPerson(id);
+      UI.toast('حذف شد', 'ok');
+    } catch (e) { UI.toast(e.message, 'bad'); }
     reload();
   }
 

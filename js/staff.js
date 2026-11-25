@@ -2,7 +2,7 @@
   'use strict';
 
   var CSS = '' +
-    '.seg{display:flex;gap:6px;margin-top:14px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:6px}' +
+    '.seg{display:flex;gap:6px;margin-top:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:6px}' +
     '.seg button{flex:1;background:none;color:#7C8CA3;padding:10px 4px;border-radius:16px;font-size:.9rem;font-weight:700;transition:all .2s ease}' +
     '.seg button.on{background:var(--blue);color:#fff}' +
     '.mv{display:flex;flex-direction:column;gap:3px;flex:none}' +
@@ -197,15 +197,15 @@
     page: 'teachers', type: 'teacher', activity: 'teacher',
     title: 'حضور و غیاب دبیران',
     noun: 'دبیر', nounPlural: 'دبیران',
-    reportTitle: 'گزارش دبیران غایب هنرستان',
+    reportTitle: 'گزارش دبیران غایب مدرسه',
     absentLabel: 'دبیران غایب'
   });
 
   define({
     page: 'officials', type: 'official', activity: 'official',
-    title: 'دبیران و مسئولان هنرستان',
+    title: 'دبیران و مسئولان مدرسه',
     noun: 'فرد', nounPlural: 'مسئولان و دبیران',
-    reportTitle: 'گزارش غایبین دبیران و مسئولان هنرستان',
+    reportTitle: 'گزارش غایبین دبیران و مسئولان مدرسه',
     absentLabel: 'غایبین'
   });
 })();

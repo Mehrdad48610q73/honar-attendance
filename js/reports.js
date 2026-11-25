@@ -1,7 +1,6 @@
 (function () {
   'use strict';
 
-  var GN = { 10: 'دهم', 11: 'یازدهم', 12: 'دوازدهم' };
   var collator = new Intl.Collator('fa');
   var ALL_ACTS = { student: ['daily', 'sport'], teacher: ['teacher'], official: ['official'] };
   var ACT_TITLE = { daily: 'حضور و غیاب مدرسه', sport: 'ورزش' };
@@ -10,10 +9,10 @@
 
   var CSS = '' +
     '#print-root{display:none}' +
-    '.rp-seg{display:flex;gap:6px;margin-top:14px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:6px}' +
+    '.rp-seg{display:flex;gap:6px;margin-top:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:6px}' +
     '.rp-seg button{flex:1;background:none;color:#7C8CA3;padding:10px 4px;border-radius:16px;font-size:.88rem;font-weight:700;transition:all .2s ease}' +
     '.rp-seg button.on{background:var(--blue);color:#fff}' +
-    '.rp-card{margin-top:12px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}' +
+    '.rp-card{margin-top:12px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}' +
     '.rp-card select{width:100%;border:2px solid #E1EAF3;border-radius:16px;padding:11px 12px;font-family:inherit;font-size:.92rem;color:var(--navy);background:var(--bg);outline:none;direction:rtl}' +
     '.rp-lab{display:block;font-size:.82rem;margin:10px 0 4px;opacity:.75}' +
     '.rp-lab:first-child{margin-top:0}' +
@@ -36,7 +35,7 @@
     '.rp-sec-h{display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px}' +
     '.rp-sec-h h3{font-size:1rem}' +
     '.rp-sec-h span{font-size:.78rem;opacity:.7}' +
-    '.rp-item{width:100%;background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:11px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px;text-align:right;color:var(--navy)}' +
+    '.rp-item{width:100%;background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:11px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px;text-align:right;color:var(--navy)}' +
     '.rp-name{flex:1;font-weight:600;font-size:.93rem}' +
     '.rp-name small{display:block;font-weight:500;font-size:.72rem;opacity:.65}' +
     '.rp-badges{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}' +
@@ -46,17 +45,21 @@
     '.rb.leave{background:#E2F5F4;color:var(--teal)}' +
     '.rb.zero{background:var(--bg);color:#7C8CA3}' +
     '.rp-empty{margin-top:4px;padding:16px}' +
+    '.rp-gh{margin:12px 4px 6px;font-size:.88rem;font-weight:800;color:var(--blue)}' +
     '.rp-card .searchbox{margin:0 0 12px;box-shadow:none;background:var(--bg)}' +
     '.rp-pd{line-height:2.1;font-size:.9rem;margin-top:6px}' +
     '@media print{' +
     '@page{size:A4;margin:12mm}' +
     'body>*:not(#print-root){display:none!important}' +
-    'body{padding:0!important;background:#fff!important}' +
-    '#print-root{display:block!important;background:#fff;color:#000;direction:rtl}' +
+    'body{padding:0!important;background:var(--card)!important}' +
+    '#print-root{display:block!important;background:var(--card);color:#000;direction:rtl}' +
     '#print-root h1{font-size:16pt;margin-bottom:4pt}' +
     '#print-root h2{font-size:13pt;margin:14pt 0 6pt}' +
     '#print-root .pr-meta{font-size:10pt;margin-bottom:6pt}' +
     '#print-root p{font-size:11pt}' +
+    '#print-root .pr-next{page-break-before:always}' +
+    '#print-root h2.pr-grade-h{font-size:14pt;margin:0 0 6pt;padding-bottom:3pt;border-bottom:2px solid #444}' +
+    '#print-root h3{font-size:12pt;margin:12pt 0 6pt}' +
     '.pr-table{width:100%;border-collapse:collapse;font-size:10.5pt}' +
     '.pr-table th,.pr-table td{border:1px solid #888;padding:4pt 6pt;text-align:right;vertical-align:top}' +
     '.pr-table th{background:#E6F3FA}' +
@@ -100,7 +103,7 @@
   function secTitle(act) { return st.cat === 'student' ? ACT_TITLE[act] : 'غیبت‌های ثبت‌شده'; }
   function reportTitle() {
     var t = 'گزارش غیبت ' + CAT_TITLE[st.cat];
-    if (st.cat === 'student' && st.grade) t += ' — پایه ' + GN[st.grade];
+    if (st.cat === 'student' && st.grade) t += ' — ' + Grades.name(st.grade);
     return t;
   }
 
@@ -113,8 +116,12 @@
       return a.absent.length + a.late.length + a.leave.length > 0;
     });
   }
+  function gradeCmp(x, y) {
+    if (st.cat !== 'student') return 0;
+    return Grades.index(x.p.grade) - Grades.index(y.p.grade);
+  }
   function baseCmp(x, y) {
-    if (st.cat === 'student') return collator.compare(x.p.name, y.p.name);
+    if (st.cat === 'student') return gradeCmp(x, y) || collator.compare(x.p.name, y.p.name);
     return (x.p.order || 0) - (y.p.order || 0);
   }
   function norm(s) {
@@ -128,7 +135,7 @@
     var list = st.rows.filter(matches);
     if (st.only && !st.q.trim()) list = list.filter(function (r) { return hasAny(r, [act]); });
     if (st.sort === 'count') {
-      list.sort(function (x, y) { return (cnt(y, act, 'absent') - cnt(x, act, 'absent')) || baseCmp(x, y); });
+      list.sort(function (x, y) { return gradeCmp(x, y) || (cnt(y, act, 'absent') - cnt(x, act, 'absent')) || baseCmp(x, y); });
     } else {
       list.sort(baseCmp);
     }
@@ -224,7 +231,11 @@
     var r = readRange();
     if (r.error) { st.range = null; st.err = r.error; st.rows = []; drawResult(); return; }
     try {
+      await Grades.load();
       var people = await DB.getPeople({ type: st.cat, grade: st.cat === 'student' ? st.grade : 0 });
+      Grades.sync(people);
+      if (st.cat === 'student' && st.grade && !Grades.has(st.grade)) st.grade = 0;
+      if (tk === st.tk && alive() && st.cat === 'student') drawOpts();
       var recs = await DB.getRecordsInRange(r.from, r.to);
       if (tk !== st.tk || !alive()) return;
       var acts = ALL_ACTS[st.cat], map = {};
@@ -264,10 +275,16 @@
     if (!list.length) {
       h += '<div class="empty rp-empty">' + (st.q.trim() ? 'موردی با این جستجو پیدا نشد.' : 'در این بازه موردی ثبت نشده است.') + '</div>';
     } else {
+      var lastGrade = null;
       h += list.map(function (r) {
         var n = cnt(r, act, 'absent'), late = cnt(r, act, 'late'), leave = cnt(r, act, 'leave');
-        return '<button class="rp-item" data-person="' + r.p.id + '"><span class="rp-name">' + UI.esc(r.p.name) +
-          (st.cat === 'student' && !st.grade ? '<small>پایه ' + GN[r.p.grade] + '</small>' : '') + '</span><span class="rp-badges">' +
+        var head = '';
+        if (st.cat === 'student' && !st.grade && r.p.grade !== lastGrade) {
+          lastGrade = r.p.grade;
+          head = '<div class="rp-gh">' + UI.esc(Grades.name(r.p.grade)) + '</div>';
+        }
+        return head + '<button class="rp-item" data-person="' + r.p.id + '"><span class="rp-name">' + UI.esc(r.p.name) +
+          '</span><span class="rp-badges">' +
           badge(n ? 'abs' : 'zero', n, 'غیبت') + (late ? badge('late', late, 'تأخیر') : '') + (leave ? badge('leave', leave, 'مرخصی') : '') +
           '</span></button>';
       }).join('');
@@ -293,8 +310,8 @@
     var h = '<div class="rp-card">' +
       '<div class="searchbox">' + ic('search') + '<input id="rQ" type="search" placeholder="جستجوی نام در گزارش" value="' + UI.esc(st.q) + '"></div>';
     if (st.cat === 'student') {
-      h += '<div class="rp-chips">' + [0, 10, 11, 12].map(function (g) {
-        return '<button class="' + (st.grade === g ? 'on' : '') + '" data-grade="' + g + '">' + (g ? 'پایه ' + GN[g] : 'همه پایه‌ها') + '</button>';
+      h += '<div class="rp-chips">' + [0].concat(Grades.ids()).map(function (g) {
+        return '<button class="' + (st.grade === g ? 'on' : '') + '" data-grade="' + g + '">' + (g ? UI.esc(Grades.name(g)) : 'همه پایه‌ها') + '</button>';
       }).join('') + '</div>';
       h += '<div class="rp-chips">' + [['both', 'مدرسه و ورزش'], ['school', 'فقط مدرسه'], ['sport', 'فقط ورزش']].map(function (s) {
         return '<button class="' + (st.scope === s[0] ? 'on' : '') + '" data-scope="' + s[0] + '">' + s[1] + '</button>';
@@ -317,9 +334,16 @@
       var list = rowsFor(act);
       L.push(secTitle(act) + ':');
       if (!list.length) L.push('موردی ثبت نشده است.');
-      list.forEach(function (r, i) {
+      var tg = null, ti = 0;
+      list.forEach(function (r) {
         var a = r.a[act];
-        var s = fa(i + 1) + '. ' + r.p.name + (st.cat === 'student' && !st.grade ? ' (پایه ' + GN[r.p.grade] + ')' : '') +
+        if (st.cat === 'student' && !st.grade && r.p.grade !== tg) {
+          tg = r.p.grade; ti = 0;
+          L.push('');
+          L.push('[' + Grades.name(tg) + ']');
+        }
+        ti++;
+        var s = fa(ti) + '. ' + r.p.name +
           ': ' + fa(a.absent.length) + ' غیبت';
         if (a.late.length) s += ' | ' + fa(a.late.length) + ' تأخیر';
         if (a.leave.length) s += ' | ' + fa(a.leave.length) + ' مرخصی';
@@ -332,7 +356,7 @@
   }
 
   function personText(row) {
-    var L = [row.p.name + (row.p.grade ? ' — پایه ' + GN[row.p.grade] : ''), 'بازه: ' + rangeLabel(st.range), ''];
+    var L = [row.p.name + (row.p.grade ? ' — ' + Grades.name(row.p.grade) : ''), 'بازه: ' + rangeLabel(st.range), ''];
     actsNow().forEach(function (act) {
       var a = row.a[act];
       if (st.cat === 'student') L.push(ACT_TITLE[act] + ':');
@@ -356,7 +380,7 @@
     var lines = [hdr.map(cell).join(',')];
     rowsAll().forEach(function (r) {
       var f = [r.p.name];
-      if (student) f.push('پایه ' + GN[r.p.grade]);
+      if (student) f.push(Grades.name(r.p.grade));
       acts.forEach(function (act) {
         var a = r.a[act];
         f.push(a.absent.length, a.late.length, a.leave.length, a.absent.join(' | '));
@@ -378,25 +402,48 @@
     UI.toast('فایل CSV ساخته شد', 'ok');
   }
 
+  function printTable(list, act) {
+    var h = '<table class="pr-table"><thead><tr><th>ردیف</th><th>نام</th>' +
+      '<th>غیبت</th><th>تأخیر</th><th>مرخصی</th><th>تاریخ‌های غیبت</th></tr></thead><tbody>';
+    list.forEach(function (r, i) {
+      var a = r.a[act];
+      h += '<tr><td>' + fa(i + 1) + '</td><td>' + UI.esc(r.p.name) + '</td>' +
+        '<td>' + fa(a.absent.length) + '</td><td>' + fa(a.late.length) + '</td><td>' + fa(a.leave.length) + '</td><td>' +
+        UI.esc(dates(a.absent)) + '</td></tr>';
+    });
+    return h + '</tbody></table>';
+  }
+
   function printHtml() {
     var student = st.cat === 'student';
     var h = '<h1>' + UI.esc(reportTitle()) + '</h1><div class="pr-meta">بازه: ' + UI.esc(rangeLabel(st.range)) +
       (st.q.trim() ? ' — جستجو: ' + UI.esc(st.q.trim()) : '') +
       ' — تاریخ تهیه گزارش: ' + UI.esc(Jalali.longDate(Jalali.todayString())) + '</div>';
-    actsNow().forEach(function (act) {
-      var list = rowsFor(act);
-      h += '<h2>' + secTitle(act) + '</h2>';
-      if (!list.length) { h += '<p>در این بازه موردی ثبت نشده است.</p>'; return; }
-      h += '<table class="pr-table"><thead><tr><th>ردیف</th><th>نام</th>' + (student ? '<th>پایه</th>' : '') +
-        '<th>غیبت</th><th>تأخیر</th><th>مرخصی</th><th>تاریخ‌های غیبت</th></tr></thead><tbody>';
-      list.forEach(function (r, i) {
-        var a = r.a[act];
-        h += '<tr><td>' + fa(i + 1) + '</td><td>' + UI.esc(r.p.name) + '</td>' + (student ? '<td>' + GN[r.p.grade] + '</td>' : '') +
-          '<td>' + fa(a.absent.length) + '</td><td>' + fa(a.late.length) + '</td><td>' + fa(a.leave.length) + '</td><td>' +
-          UI.esc(dates(a.absent)) + '</td></tr>';
+    var acts = actsNow();
+    if (!student) {
+      acts.forEach(function (act) {
+        var list = rowsFor(act);
+        h += '<h2>' + secTitle(act) + '</h2>';
+        h += list.length ? printTable(list, act) : '<p>در این بازه موردی ثبت نشده است.</p>';
       });
-      h += '</tbody></table>';
+      return h;
+    }
+    // دانش‌آموزان: هر پایه در یک صفحه جداگانه
+    var first = true;
+    (st.grade ? [st.grade] : Grades.ids()).forEach(function (g) {
+      var parts = acts.map(function (act) {
+        return { act: act, list: rowsFor(act).filter(function (r) { return r.p.grade === g; }) };
+      });
+      if (!parts.some(function (x) { return x.list.length; })) return;
+      h += '<div class="pr-grade' + (first ? '' : ' pr-next') + '"><h2 class="pr-grade-h">' + UI.esc(Grades.name(g)) + '</h2>';
+      first = false;
+      parts.forEach(function (x) {
+        h += '<h3>' + secTitle(x.act) + '</h3>';
+        h += x.list.length ? printTable(x.list, x.act) : '<p>در این بازه موردی ثبت نشده است.</p>';
+      });
+      h += '</div>';
     });
+    if (first) h += '<p>در این بازه موردی ثبت نشده است.</p>';
     return h;
   }
 

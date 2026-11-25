@@ -1,7 +1,6 @@
 (function () {
   'use strict';
 
-  var GN = { 10: 'دهم', 11: 'یازدهم', 12: 'دوازدهم' };
   var LABEL = { present: 'حاضر', absent: 'غایب', late: 'تأخیر', leave: 'مرخصی' };
   var ICON = { present: 'check', absent: 'x', late: 'clock', leave: 'leave' };
   var collator = new Intl.Collator('fa');
@@ -69,7 +68,7 @@
   };
 
   var CSS = '' +
-    '.datebar{margin-top:14px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:8px;display:flex;align-items:center;gap:8px}' +
+    '.datebar{margin-top:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:8px;display:flex;align-items:center;gap:8px}' +
     '.date-nav{width:42px;height:42px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:grid;place-items:center;flex:none}' +
     '.date-nav svg,.copy-big svg,.opt svg,.st-btn svg{stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}' +
     '.date-nav svg{width:20px;height:20px}' +
@@ -78,11 +77,11 @@
     '.date-mid small{display:block;font-weight:500;font-size:.72rem;color:var(--blue)}' +
     '.today-pill{background:var(--navy);color:#fff;border-radius:14px;padding:8px 12px;font-size:.8rem;font-weight:700;flex:none}' +
     '.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}' +
-    '.chip{background:#fff;border-radius:18px;box-shadow:var(--shadow);padding:8px 4px;text-align:center;font-size:.75rem}' +
+    '.chip{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:8px 4px;text-align:center;font-size:.75rem}' +
     '.chip b{display:block;font-size:1.2rem;line-height:1.5}' +
     '.chip.g b{color:var(--green)}.chip.r b{color:var(--red)}.chip.o b{color:var(--orange)}.chip.t b{color:var(--teal)}' +
     '.att-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}' +
-    '.att-row{background:#fff;border-radius:18px;box-shadow:var(--shadow);padding:8px 10px;display:flex;align-items:center;gap:12px;transition:background .2s}' +
+    '.att-row{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:8px 10px;display:flex;align-items:center;gap:12px;transition:background .2s}' +
     '.att-row.absent{background:#FFF4F4}.att-row.late{background:#FFF8EE}.att-row.leave{background:#EEF9F8}' +
     '.att-name{flex:1;font-weight:600;font-size:.95rem}' +
     '.st-btn{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;flex:none;transition:transform .15s,background .2s}' +
@@ -94,7 +93,7 @@
     '.st-leave{background:#E2F5F4;color:var(--teal)}' +
     '.att-more{width:36px;height:36px;border-radius:50%;background:var(--bg);color:#7C8CA3;display:grid;place-items:center;flex:none}' +
     '.att-more svg{width:22px;height:22px;fill:currentColor;stroke:none}' +
-    '.abs-box{margin-top:18px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}' +
+    '.abs-box{margin-top:18px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}' +
     '.abs-box h3{font-size:1rem;margin-bottom:6px}' +
     '.abs-count{color:var(--red);font-size:.88rem;margin-right:6px}' +
     '.abs-grp{margin-top:8px;font-size:.88rem;line-height:2}' +
@@ -109,8 +108,8 @@
     '.copy-big{width:100%;margin-top:14px;padding:16px;border-radius:20px;background:var(--navy);color:#fff;font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px}' +
     '.copy-big svg{width:22px;height:22px}' +
     '.copy-big:active{transform:scale(.98)}' +
-    '.copy-mini{display:flex;gap:6px;margin-top:10px}' +
-    '.copy-mini .btn{font-size:.78rem;padding:10px 4px}' +
+    '.copy-mini{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}' +
+    '.copy-mini .btn{font-size:.78rem;padding:10px 8px;flex:1 0 30%}' +
     '.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}' +
     '.opt{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border-radius:20px;font-weight:700;font-size:.92rem}' +
     '.opt svg{width:26px;height:26px}' +
@@ -147,7 +146,7 @@
   }
 
   function create(o) {
-    var st = { date: Jalali.todayString(), grade: 10, people: [], recs: {}, phones: {}, smsCfg: null, root: null, page: null, tk: 0 };
+    var st = { date: Jalali.todayString(), grade: 0, people: [], recs: {}, phones: {}, smsCfg: null, root: null, page: null, tk: 0 };
 
     function alive() { return st.page && st.page.isConnected; }
     function q(sel) { return st.page.querySelector(sel); }
@@ -219,13 +218,16 @@
       var tk = ++st.tk;
       var date = st.date;
       try {
+        if (o.grades) await Grades.load();
         var people = await DB.getPeople({ type: o.type });
+        if (o.grades) Grades.sync(people);
         var recs = await DB.getRecordsByDate(date, o.activity);
         var phones = (o.sms && window.Phones) ? await Phones.all() : {};
         var smsCfg = o.sms ? await SmsTpl.load() : null;
         if (tk !== st.tk || !alive()) return;
         st.phones = phones;
         st.smsCfg = smsCfg;
+        if (o.grades && !Grades.has(st.grade)) st.grade = Grades.list.length ? Grades.list[0].id : 0;
         st.people = people;
         st.recs = {};
         recs.forEach(function (r) { st.recs[r.personId] = r.status; });
@@ -249,9 +251,10 @@
 
     function drawTabs() {
       if (!o.grades) return;
-      q('#aTabs').innerHTML = [10, 11, 12].map(function (g) {
+      q('#aTabs').innerHTML = Grades.list.map(function (gr) {
+        var g = gr.id;
         var ab = st.people.filter(function (p) { return p.grade === g && st.recs[p.id] === 'absent'; }).length;
-        return '<button class="tab' + (g === st.grade ? ' active' : '') + '" data-g="' + g + '">پایه ' + GN[g] +
+        return '<button class="tab' + (g === st.grade ? ' active' : '') + '" data-g="' + g + '">' + UI.esc(gr.name) +
           '<small>' + UI.fa(ab) + ' غایب</small></button>';
       }).join('');
     }
@@ -300,16 +303,16 @@
       if (!all.length) {
         h += '<div class="abs-grp">هیچ غایبی ثبت نشده است.</div>';
       } else if (o.grades && o.sms) {
-        [10, 11, 12].forEach(function (g) {
+        Grades.ids().forEach(function (g) {
           var l = absentees(g);
           if (!l.length) return;
-          h += '<div class="abs-grp"><b>پایه ' + GN[g] + ':</b></div>';
+          h += '<div class="abs-grp"><b>' + UI.esc(Grades.name(g)) + ':</b></div>';
           l.forEach(function (p) { h += absItem(p); });
         });
       } else if (o.grades) {
-        [10, 11, 12].forEach(function (g) {
+        Grades.ids().forEach(function (g) {
           var l = absentees(g);
-          if (l.length) h += '<div class="abs-grp"><b>پایه ' + GN[g] + ':</b> ' + l.map(function (p) { return UI.esc(p.name); }).join('، ') + '</div>';
+          if (l.length) h += '<div class="abs-grp"><b>' + UI.esc(Grades.name(g)) + ':</b> ' + l.map(function (p) { return UI.esc(p.name); }).join('، ') + '</div>';
         });
       } else {
         h += '<div class="abs-grp">' + all.map(function (p) { return UI.esc(p.name); }).join('، ') + '</div>';
@@ -317,8 +320,8 @@
       h += '<button class="copy-big" data-act="copy-all">' + ic('copy') + 'کپی اسامی غایبین</button>';
       if (o.sms) h += '<button class="sms-set" data-page="settings">✎ تغییر متن پیامک و نام مدرسه</button>';
       if (o.grades) {
-        h += '<div class="copy-mini">' + [10, 11, 12].map(function (g) {
-          return '<button class="btn ghost" data-copy-g="' + g + '">کپی پایه ' + GN[g] + '</button>';
+        h += '<div class="copy-mini">' + Grades.ids().map(function (g) {
+          return '<button class="btn ghost" data-copy-g="' + g + '">کپی ' + UI.esc(Grades.name(g)) + '</button>';
         }).join('') + '</div>';
       }
       q('#aAbs').innerHTML = h;
@@ -383,9 +386,9 @@
         return list.map(function (p, i) { return UI.fa(i + 1) + '. ' + p.name; });
       }
       if (o.grades) {
-        [10, 11, 12].forEach(function (g) {
+        Grades.ids().forEach(function (g) {
           if (onlyGrade && g !== onlyGrade) return;
-          L.push('پایه ' + GN[g] + ':');
+          L.push(Grades.name(g) + ':');
           block(absentees(g)).forEach(function (x) { L.push(x); });
           L.push('');
         });
@@ -453,7 +456,7 @@
     activity: 'daily',
     grades: true,
     sort: 'alpha',
-    reportTitle: 'گزارش غایبین هنرستان',
+    reportTitle: 'گزارش غایبین مدرسه',
     absentLabel: 'غایبین',
     emptyText: 'هنوز دانش‌آموزی ثبت نشده است.',
     sms: 'daily',

@@ -4,14 +4,13 @@
   var APP_ID = 'honar-attendance';
   var FORMAT = 1;
   var TYPES = ['student', 'teacher', 'official'];
-  var GRADES = [10, 11, 12];
   var STATUSES = ['absent', 'late', 'leave'];
   var ACTS = { student: ['daily', 'sport'], teacher: ['teacher'], official: ['official'] };
   var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   var STORES = ['people', 'records', 'settings'];
 
   var CSS = '' +
-    '.bk-card{margin-top:14px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}' +
+    '.bk-card{margin-top:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}' +
     '.bk-card h3{font-size:1rem;margin-bottom:6px}' +
     '.bk-line{font-size:.9rem;line-height:2}' +
     '.bk-warn{margin-top:10px;background:#FDF0E2;border-radius:18px;padding:12px 14px;font-size:.84rem;line-height:1.95}' +
@@ -108,7 +107,7 @@
       if (!isObj(p) || typeof p.id !== 'string' || !p.id || p.id.length > 100) return bad('اطلاعات یکی از افراد خراب است (ردیف ' + (i + 1) + ').');
       if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > 200) return bad('نام یکی از افراد نامعتبر است (ردیف ' + (i + 1) + ').');
       if (TYPES.indexOf(p.type) === -1) return bad('نوع یکی از افراد نامعتبر است (ردیف ' + (i + 1) + ').');
-      if (p.type === 'student' && GRADES.indexOf(p.grade) === -1) return bad('پایه یکی از دانش‌آموزان نامعتبر است (ردیف ' + (i + 1) + ').');
+      if (p.type === 'student' && !(Number.isInteger(p.grade) && p.grade > 0)) return bad('پایه یکی از دانش‌آموزان نامعتبر است (ردیف ' + (i + 1) + ').');
       if (ids[p.id]) return bad('در فایل، شناسه تکراری وجود دارد.');
       ids[p.id] = p.type;
       people.push({
@@ -388,7 +387,7 @@
       '<div class="bk-card bk-danger"><h3>حذف همه اطلاعات</h3>' +
       '<div class="bk-line">همه دانش‌آموزان، دبیران، مسئولان و سوابق حضور و غیاب پاک می‌شود و قابل برگشت نیست، مگر اینکه فایل پشتیبان داشته باشید.</div>' +
       '<div class="bk-col"><button class="btn danger" data-act="wipe">حذف همه اطلاعات</button></div></div>' +
-      '<div class="bk-card"><h3>درباره برنامه</h3><div class="bk-line">hozor (حضور) — نسخه ۱٫۰<br>مدیریت حضور و غیاب هنرستان، بدون نیاز به اینترنت<br><b>توسعه داده شده توسط مهرداد بایرامی</b></div></div>';
+      '<div class="bk-card"><h3>درباره برنامه</h3><div class="bk-line">hozor (حضور) — نسخه ۱٫۰<br>برنامه حضور و غیاب مدرسه، بدون نیاز به اینترنت<br><b>توسعه داده شده توسط مهرداد بایرامی</b></div></div>';
     if (sms) updateSmsPreview();
     function updateSmsPreview() {
       var style = page.querySelector('#smsStyle').value;

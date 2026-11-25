@@ -6,7 +6,6 @@
   var dbPromise = null;
 
   var PERSON_TYPES = ['student', 'teacher', 'official'];
-  var GRADES = [10, 11, 12];
   var STATUSES = ['absent', 'late', 'leave'];
   var ACTIVITIES_BY_TYPE = {
     student: ['daily', 'sport'],
@@ -14,6 +13,8 @@
     official: ['official']
   };
   var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+  function validGrade(g) { return Number.isInteger(g) && g > 0 && g < 100000; }
 
   function open() {
     if (dbPromise) return dbPromise;
@@ -92,7 +93,7 @@
 
     clean.forEach(function (p) {
       if (PERSON_TYPES.indexOf(p.type) === -1) throw new Error('نوع فرد نامعتبر است');
-      if (p.type === 'student' && GRADES.indexOf(p.grade) === -1) throw new Error('پایه نامعتبر است');
+      if (p.type === 'student' && !validGrade(p.grade)) throw new Error('پایه نامعتبر است');
     });
 
     var db = await open();
@@ -171,7 +172,7 @@
     }
     if (changes.grade !== undefined && person.type === 'student') {
       var g = Number(changes.grade);
-      if (GRADES.indexOf(g) === -1) throw new Error('پایه نامعتبر است');
+      if (!validGrade(g)) throw new Error('پایه نامعتبر است');
       person.grade = g;
     }
     s.put(person);
