@@ -1,10 +1,11 @@
-var CACHE = 'honar-attendance-v1';
+var CACHE = 'hozor-v2';
 var ASSETS = [
   './',
   'index.html',
   'manifest.json',
   'icon-192.png',
   'icon-512.png',
+  'logo.png',
   'css/base.css',
   'css/components.css',
   'css/pages.css',
@@ -18,6 +19,7 @@ var ASSETS = [
   'js/staff.js',
   'js/calendar.js',
   'js/reports.js',
+  'js/discipline.js',
   'js/backup.js'
 ];
 
