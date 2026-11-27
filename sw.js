@@ -1,4 +1,4 @@
-var CACHE = 'hozor-v2';
+var CACHE = 'hozor-v3';
 var ASSETS = [
   './',
   'index.html',
