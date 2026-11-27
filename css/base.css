@@ -1,15 +1,15 @@
 :root{
-  --navy:#102B50;
-  --blue:#2878C7;
-  --blue-light:#E3EEF7;
-  --teal:#40B9B1;
+  --navy:#12335F;
+  --blue:#1A4C86;
+  --blue-light:#D6E4F0;
+  --teal:#58B0D9;
   --orange:#F3A65B;
-  --bg:#E8EDF3;
-  --card:#F6F8FB;
+  --bg:#D6E4F0;
+  --card:#EDF3F9;
   --red:#E76D75;
   --green:#58B88A;
   --radius:22px;
-  --shadow:0 6px 20px rgba(16,43,80,.08);
+  --shadow:0 6px 20px rgba(18,51,95,.10);
 }
 
 *{

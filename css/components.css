@@ -1,5 +1,5 @@
 .app-header{
-  background:linear-gradient(135deg,var(--navy),var(--blue));
+  background:radial-gradient(circle at 12% 115%,rgba(88,176,217,.6),transparent 55%),linear-gradient(135deg,var(--navy),var(--blue));
   color:#fff;
   padding:30px 20px 74px;
   border-radius:0 0 32px 32px;
@@ -67,7 +67,7 @@
 .c-green{background:#E1F1E8;color:var(--green);}
 .c-red{background:#F7E4E6;color:var(--red);}
 .c-orange{background:#F9ECDD;color:var(--orange);}
-.c-teal{background:#DDF1F0;color:var(--teal);}
+.c-teal{background:#D4EAF6;color:#2D8DBA;}
 .c-navy{background:#DEE4EC;color:var(--navy);}
 
 .section-title{
@@ -127,7 +127,7 @@
   align-items:center;
   gap:2px;
   font-size:.72rem;
-  color:#7C8CA3;
+  color:#5B6E8A;
   padding:6px 10px;
   border-radius:16px;
 }
