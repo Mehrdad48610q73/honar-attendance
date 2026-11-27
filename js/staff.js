@@ -3,7 +3,7 @@
 
   var CSS = '' +
     '.seg{display:flex;gap:6px;margin-top:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:6px}' +
-    '.seg button{flex:1;background:none;color:#7C8CA3;padding:10px 4px;border-radius:16px;font-size:.9rem;font-weight:700;transition:all .2s ease}' +
+    '.seg button{flex:1;background:none;color:#5B6E8A;padding:10px 4px;border-radius:16px;font-size:.9rem;font-weight:700;transition:all .2s ease}' +
     '.seg button.on{background:var(--blue);color:#fff}' +
     '.mv{display:flex;flex-direction:column;gap:3px;flex:none}' +
     '.mv button{width:34px;height:26px;border-radius:10px;background:var(--bg);color:var(--blue);display:grid;place-items:center}' +

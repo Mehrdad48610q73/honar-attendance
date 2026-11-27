@@ -82,7 +82,7 @@
     '.chip.g b{color:var(--green)}.chip.r b{color:var(--red)}.chip.o b{color:var(--orange)}.chip.t b{color:var(--teal)}' +
     '.att-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}' +
     '.att-row{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:8px 10px;display:flex;align-items:center;gap:12px;transition:background .2s}' +
-    '.att-row.absent{background:#FFF4F4}.att-row.late{background:#FFF8EE}.att-row.leave{background:#EEF9F8}' +
+    '.att-row.absent{background:#FFF4F4}.att-row.late{background:#FFF8EE}.att-row.leave{background:#E3F1F9}' +
     '.att-name{flex:1;font-weight:600;font-size:.95rem}' +
     '.st-btn{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;flex:none;transition:transform .15s,background .2s}' +
     '.st-btn:active{transform:scale(.86)}' +
@@ -90,15 +90,15 @@
     '.st-present{background:#E5F5EC;color:var(--green)}' +
     '.st-absent{background:var(--red);color:#fff}' +
     '.st-late{background:#FDF0E2;color:var(--orange)}' +
-    '.st-leave{background:#E2F5F4;color:var(--teal)}' +
-    '.att-more{width:36px;height:36px;border-radius:50%;background:var(--bg);color:#7C8CA3;display:grid;place-items:center;flex:none}' +
+    '.st-leave{background:#D4EAF6;color:var(--teal)}' +
+    '.att-more{width:36px;height:36px;border-radius:50%;background:var(--bg);color:#5B6E8A;display:grid;place-items:center;flex:none}' +
     '.att-more svg{width:22px;height:22px;fill:currentColor;stroke:none}' +
     '.abs-box{margin-top:18px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}' +
     '.abs-box h3{font-size:1rem;margin-bottom:6px}' +
     '.abs-count{color:var(--red);font-size:.88rem;margin-right:6px}' +
     '.abs-grp{margin-top:8px;font-size:.88rem;line-height:2}' +
     '.abs-grp b{color:var(--blue)}' +
-    '.abs-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px dashed #E6EDF5}' +
+    '.abs-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px dashed #C6D7E8}' +
     '.abs-nm{flex:1;font-weight:600;font-size:.9rem}' +
     '.sms-btn{display:flex;align-items:center;gap:5px;background:var(--green);color:#fff;border-radius:14px;padding:8px 12px;font-size:.78rem;font-weight:700;flex:none}' +
     '.sms-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}' +

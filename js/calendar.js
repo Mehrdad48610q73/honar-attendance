@@ -20,7 +20,7 @@
     '.cal-today{background:var(--navy);color:#fff;border-radius:14px;padding:8px 12px;font-size:.8rem;font-weight:700;flex:none}' +
     '.cal-card{margin-top:12px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 8px}' +
     '.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}' +
-    '.cal-wd{text-align:center;font-size:.72rem;font-weight:700;color:#7C8CA3;padding:4px 0}' +
+    '.cal-wd{text-align:center;font-size:.72rem;font-weight:700;color:#5B6E8A;padding:4px 0}' +
     '.cal-wd.fri{color:var(--red)}' +
     '.cal-day{aspect-ratio:1/1.05;border-radius:14px;background:none;color:var(--navy);font-weight:600;font-size:.95rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:background .15s}' +
     '.cal-day.fri{color:var(--red)}' +
@@ -42,7 +42,7 @@
     '.cal-line b{color:var(--blue)}' +
     '.cal-badge{display:inline-block;font-size:.68rem;border-radius:10px;padding:0 8px;margin-right:4px;line-height:1.7;font-weight:700}' +
     '.cal-badge.late{background:#FDF0E2;color:var(--orange)}' +
-    '.cal-badge.leave{background:#E2F5F4;color:var(--teal)}' +
+    '.cal-badge.leave{background:#D4EAF6;color:var(--teal)}' +
     '.cal-copy{width:100%;margin-top:14px;padding:15px;border-radius:20px;background:var(--navy);color:#fff;font-size:.98rem;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px}' +
     '.cal-copy svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}' +
     '.cal-sel{display:flex;gap:6px;margin-top:10px}' +

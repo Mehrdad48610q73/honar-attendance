@@ -10,16 +10,16 @@
   var CSS = '' +
     '#print-root{display:none}' +
     '.rp-seg{display:flex;gap:6px;margin-top:14px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:6px}' +
-    '.rp-seg button{flex:1;background:none;color:#7C8CA3;padding:10px 4px;border-radius:16px;font-size:.88rem;font-weight:700;transition:all .2s ease}' +
+    '.rp-seg button{flex:1;background:none;color:#5B6E8A;padding:10px 4px;border-radius:16px;font-size:.88rem;font-weight:700;transition:all .2s ease}' +
     '.rp-seg button.on{background:var(--blue);color:#fff}' +
     '.rp-card{margin-top:12px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}' +
-    '.rp-card select{width:100%;border:2px solid #E1EAF3;border-radius:16px;padding:11px 12px;font-family:inherit;font-size:.92rem;color:var(--navy);background:var(--bg);outline:none;direction:rtl}' +
+    '.rp-card select{width:100%;border:2px solid #C6D7E8;border-radius:16px;padding:11px 12px;font-family:inherit;font-size:.92rem;color:var(--navy);background:var(--bg);outline:none;direction:rtl}' +
     '.rp-lab{display:block;font-size:.82rem;margin:10px 0 4px;opacity:.75}' +
     '.rp-lab:first-child{margin-top:0}' +
     '.rp-sel{display:flex;gap:6px}' +
     '.rp-sel select{flex:1;width:auto;padding:11px 6px}' +
     '.rp-chips{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}' +
-    '.rp-chips button{flex:1;min-width:22%;background:var(--bg);color:#7C8CA3;padding:9px 4px;border-radius:14px;font-size:.82rem;font-weight:700}' +
+    '.rp-chips button{flex:1;min-width:22%;background:var(--bg);color:#5B6E8A;padding:9px 4px;border-radius:14px;font-size:.82rem;font-weight:700}' +
     '.rp-chips button.on{background:var(--blue-light);color:var(--blue)}' +
     '.rp-row2{display:flex;align-items:center;gap:10px;margin-top:4px}' +
     '.rp-row2 label{font-size:.85rem;white-space:nowrap}' +
@@ -42,8 +42,8 @@
     '.rb{font-size:.72rem;border-radius:10px;padding:2px 9px;font-weight:700;line-height:1.7}' +
     '.rb.abs{background:#FCE9EA;color:var(--red)}' +
     '.rb.late{background:#FDF0E2;color:var(--orange)}' +
-    '.rb.leave{background:#E2F5F4;color:var(--teal)}' +
-    '.rb.zero{background:var(--bg);color:#7C8CA3}' +
+    '.rb.leave{background:#D4EAF6;color:var(--teal)}' +
+    '.rb.zero{background:var(--bg);color:#5B6E8A}' +
     '.rp-empty{margin-top:4px;padding:16px}' +
     '.rp-gh{margin:12px 4px 6px;font-size:.88rem;font-weight:800;color:var(--blue)}' +
     '.rp-card .searchbox{margin:0 0 12px;box-shadow:none;background:var(--bg)}' +
